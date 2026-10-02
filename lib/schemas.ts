@@ -112,6 +112,7 @@ export const inputSchemas = {
       .optional(),
   }),
   reset_game: z.object({ new_tokens: z.boolean().default(false) }),
+  close_game: z.object({}),
   game_control: z.object({ action: z.enum(["ready", "unready", "start", "pause", "resume", "last_call", "end"]) }),
   record_job: z.object({ team_id: uuid, passed: z.boolean() }),
   buy_item: z.object({ team_id: uuid, item: z.enum(["hull", "mast", "sail", "map", "flag", "sword", "shield"]) }),

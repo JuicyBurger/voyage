@@ -209,20 +209,31 @@ export const handlers: Record<string, Handler> = {
       const db = supabaseServer();
       const gameId = ctx.actor!.game_id;
       const [tokens, teams, posts, game] = await Promise.all([
-        db.from("role_tokens").select("id, token, pin, role, team_id, post_id").eq("game_id", gameId),
+        db.from("role_tokens").select("id, token, pin, role, team_id, post_id, last_seen_at").eq("game_id", gameId),
         db.from("teams").select("id, slot, name, color").eq("game_id", gameId),
         db.from("posts").select("id, kind, name, staff_name").eq("game_id", gameId),
-        db.from("games").select("code, name, expires_at").eq("id", gameId).single(),
+        db.from("games").select("code, name, expires_at, status, rehearsal").eq("id", gameId).single(),
       ]);
+      const connectedMs = 90_000;
+      const now = Date.now();
+      const withStatus = (tokens.data ?? []).map((t) => {
+        const seen = t.last_seen_at ? Date.parse(t.last_seen_at) : NaN;
+        return {
+          ...t,
+          connected: Number.isFinite(seen) && now - seen < connectedMs,
+        };
+      });
       return {
         ok: true,
         state: {
-          tokens: tokens.data,
+          tokens: withStatus,
           teams: teams.data,
           posts: posts.data,
           code: game.data?.code,
           name: game.data?.name,
           expires_at: game.data?.expires_at,
+          status: game.data?.status,
+          rehearsal: game.data?.rehearsal,
         },
       };
     },
@@ -285,6 +296,16 @@ export const handlers: Record<string, Handler> = {
         p_action_id: ctx.actionId,
         p_game_id: ctx.actor!.game_id,
         p_new_tokens: input.new_tokens ?? false,
+      }),
+  },
+
+  close_game: {
+    auth: "token",
+    roles: ["mc"],
+    run: (ctx) =>
+      rpc("close_game", {
+        p_action_id: ctx.actionId,
+        p_game_id: ctx.actor!.game_id,
       }),
   },
 

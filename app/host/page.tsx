@@ -70,6 +70,7 @@ export default function HostPage() {
     return (
       <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-6 p-6">
         <div className="text-center">
+          <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{copy.host.step}</p>
           <h1 className="text-3xl font-extrabold">{copy.host.saveTitle}</h1>
           <p className="mt-2 text-muted-foreground">{copy.host.saveBody}</p>
         </div>
@@ -111,6 +112,7 @@ export default function HostPage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center p-6">
       <Card>
         <CardHeader>
+          <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{copy.host.step}</p>
           <CardTitle className="text-2xl">{copy.host.title}</CardTitle>
         </CardHeader>
         <CardContent>

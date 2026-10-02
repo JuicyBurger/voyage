@@ -56,12 +56,5 @@ export default function SetupPage() {
     );
   }
 
-  return (
-    <SetupForm
-      gameId={gameId}
-      onCreateNew={() => {
-        window.location.href = "/host";
-      }}
-    />
-  );
+  return <SetupForm gameId={gameId} />;
 }

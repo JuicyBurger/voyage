@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -8,14 +9,37 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { sendAction } from "@/lib/api";
 import { TEAM_COLORS, teamColor } from "@/lib/colors";
 import { copy, errorMessage } from "@/lib/copy";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import type { Game, GameConfig, Post, PostKind, Team } from "@/lib/types";
+
+// Defaults for the number fields (matches default_config() in Postgres).
+const NUMBER_DEFAULTS: Record<string, number> = {
+  "start_gold": 30,
+  "parts.hull.price": 55,
+  "parts.mast.price": 35,
+  "parts.sail.price": 45,
+  "parts.map.price": 35,
+  "stock_start": 3,
+  "supply_ship_add": 2,
+  "job_pay.shipwright": 12,
+  "job_pay.sailmaker": 12,
+  "job_pay.cartographer": 12,
+  "job_pay.inn": 10,
+  "job_pay.blacksmith": 10,
+  "fail_pay": 4,
+  "jobs_per_post": 4,
+  "items.flag.price": 15,
+  "items.flag.raids": 3,
+  "items.sword.price": 15,
+  "items.sword.bonus": 1,
+  "items.shield.price": 15,
+  "raid.steal": 15,
+  "raid.immune_minutes": 3,
+  "raid.max_times_raided": 3,
+};
 
 // [label, path into config]
 const NUMBER_FIELDS: [string, string[]][] = [
@@ -55,15 +79,13 @@ function setPath<T>(obj: T, path: string[], value: unknown): T {
   return copyObj as T;
 }
 
-export function SetupForm({ gameId, onCreateNew }: { gameId: string; onCreateNew: () => void }) {
+export function SetupForm({ gameId }: { gameId: string }) {
+  const router = useRouter();
   const [game, setGame] = useState<Game | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [config, setConfig] = useState<GameConfig | null>(null);
-  const [json, setJson] = useState("");
   const [saving, setSaving] = useState(false);
-  const [resetText, setResetText] = useState("");
-  const [newTokens, setNewTokens] = useState(false);
 
   const load = useCallback(async () => {
     const db = supabaseBrowser();
@@ -75,7 +97,6 @@ export function SetupForm({ gameId, onCreateNew }: { gameId: string; onCreateNew
     if (g.data) {
       setGame(g.data as Game);
       setConfig(g.data.config as GameConfig);
-      setJson(JSON.stringify(g.data.config, null, 2));
     }
     setTeams((t.data ?? []) as Team[]);
     const order: PostKind[] = ["shipwright", "sailmaker", "cartographer", "inn", "blacksmith"];
@@ -90,10 +111,10 @@ export function SetupForm({ gameId, onCreateNew }: { gameId: string; onCreateNew
 
   const configEditable = game.status === "setup";
   const namesEditable = game.status === "setup" || game.status === "ready";
+  const onboarding = game.status === "setup" || game.status === "ready";
 
   function updateConfig(next: GameConfig) {
     setConfig(next);
-    setJson(JSON.stringify(next, null, 2));
   }
 
   async function save() {
@@ -107,33 +128,55 @@ export function SetupForm({ gameId, onCreateNew }: { gameId: string; onCreateNew
     if (res.ok) toast.success("Saved.");
     else toast.error(res.message ?? errorMessage(res.error_code, res.args));
     await load();
+    return res.ok;
   }
 
-  async function reset() {
-    const res = await sendAction("reset_game", { new_tokens: newTokens });
-    if (res.ok) {
-      toast.success(newTokens ? "Game reset. Print the new QR codes." : "Game reset.");
-      setResetText("");
-      await load();
-    } else {
-      toast.error(errorMessage(res.error_code, res.args));
+  async function continueToPhones() {
+    setSaving(true);
+    const res = await sendAction("update_setup", {
+      config: configEditable ? config : undefined,
+      teams: teams.map((t) => ({ id: t.id, name: t.name, color: t.color })),
+      posts: posts.map((p) => ({ id: p.id, name: p.name, staff_name: p.staff_name ?? "" })),
+    });
+    setSaving(false);
+    if (!res.ok) {
+      toast.error(res.message ?? errorMessage(res.error_code, res.args));
+      return;
     }
+    router.push("/mc/lobby");
+  }
+
+  function resetNumbersToDefault() {
+    if (!config) return;
+    let next = config;
+    for (const [, path] of NUMBER_FIELDS) {
+      const key = path.join(".");
+      const value = NUMBER_DEFAULTS[key];
+      if (value !== undefined) next = setPath(next, path, value);
+    }
+    updateConfig(next);
+    toast.success(copy.setup.resetNumbersDone);
   }
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 pb-24">
       <header className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold">MC setup</h1>
+        <div>
+          {onboarding && (
+            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{copy.setup.step}</p>
+          )}
+          <h1 className="text-2xl font-bold">{copy.setup.title}</h1>
+        </div>
         <Badge variant="secondary">Game {game.code}</Badge>
         <Badge>{copy.status[game.status]}</Badge>
-        <div className="ml-auto flex gap-2">
-          <Link href="/mc/qr" className={buttonVariants({ variant: "outline", className: "h-10" })}>
-            QR sheet
+        {!onboarding && (
+          <Link
+            href="/mc"
+            className={buttonVariants({ variant: "outline", className: "ml-auto h-10" })}
+          >
+            {copy.setup.backPanel}
           </Link>
-          <Link href="/mc" className={buttonVariants({ variant: "outline", className: "h-10" })}>
-            MC panel
-          </Link>
-        </div>
+        )}
       </header>
 
       <Card>
@@ -208,11 +251,21 @@ export function SetupForm({ gameId, onCreateNew }: { gameId: string; onCreateNew
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Numbers</CardTitle>
-          {!configEditable && (
-            <p className="text-sm text-muted-foreground">Numbers are locked once the game is Ready.</p>
-          )}
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
+          <div>
+            <CardTitle>Numbers</CardTitle>
+            {!configEditable && (
+              <p className="mt-1 text-sm text-muted-foreground">Numbers are locked once the game is Ready.</p>
+            )}
+          </div>
+          <Button
+            variant="outline"
+            disabled={!configEditable}
+            onClick={resetNumbersToDefault}
+            className="h-10"
+          >
+            {copy.setup.resetNumbers}
+          </Button>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -231,74 +284,32 @@ export function SetupForm({ gameId, onCreateNew }: { gameId: string; onCreateNew
               </div>
             ))}
           </div>
-          <Separator />
-          <Label>All numbers (JSON)</Label>
-          <Textarea
-            value={json}
-            disabled={!configEditable}
-            onChange={(e) => setJson(e.target.value)}
-            className="min-h-64 font-mono text-xs"
-          />
-          <Button
-            variant="outline"
-            disabled={!configEditable}
-            onClick={() => {
-              try {
-                updateConfig(JSON.parse(json));
-                toast.success("JSON applied. Tap Save to keep it.");
-              } catch {
-                toast.error("That JSON is not valid.");
-              }
-            }}
-            className="h-10 self-start"
-          >
-            Apply JSON
-          </Button>
         </CardContent>
       </Card>
 
-      <div className="sticky bottom-4 z-10 flex justify-end">
-        <Button onClick={save} disabled={saving || !namesEditable} className="h-12 px-8 text-base shadow-lg">
-          Save
+      <div className="sticky bottom-4 z-10 flex flex-wrap justify-end gap-2">
+        <Button
+          variant="outline"
+          onClick={() => void save()}
+          disabled={saving || !namesEditable}
+          className="h-12 px-6 text-base shadow-lg"
+        >
+          {copy.setup.save}
         </Button>
-      </div>
-
-      <Card className="border-destructive/40">
-        <CardHeader>
-          <CardTitle>Reset game</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <p className="text-sm">
-            This wipes all gold, parts, jobs and events, and goes back to setup. Names and numbers stay.
-          </p>
-          <div className="flex items-center gap-3">
-            <Switch checked={newTokens} onCheckedChange={setNewTokens} id="new-tokens" />
-            <Label htmlFor="new-tokens">Make new QR codes (every team and post phone must scan again)</Label>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Input
-              placeholder="Type RESET"
-              value={resetText}
-              onChange={(e) => setResetText(e.target.value)}
-              className="h-11 max-w-40"
-            />
-            <Button variant="destructive" disabled={resetText !== "RESET"} onClick={reset} className="h-11">
-              Reset game
-            </Button>
-          </div>
-          <Separator />
+        {onboarding ? (
           <Button
-            variant="outline"
-            onClick={() => {
-              if (confirm("Create a brand new game? The old game stays in the database but is no longer used."))
-                onCreateNew();
-            }}
-            className="h-10 self-start"
+            onClick={() => void continueToPhones()}
+            disabled={saving || !namesEditable}
+            className="h-12 px-8 text-base shadow-lg"
           >
-            Create a new game instead
+            {copy.setup.continue}
           </Button>
-        </CardContent>
-      </Card>
+        ) : (
+          <Link href="/mc" className={buttonVariants({ className: "h-12 px-8 text-base shadow-lg" })}>
+            {copy.setup.backPanel}
+          </Link>
+        )}
+      </div>
     </main>
   );
 }

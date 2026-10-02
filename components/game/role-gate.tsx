@@ -12,12 +12,29 @@ import { useWakeLock } from "@/lib/use-wake-lock";
 import { buttonVariants } from "@/components/ui/button";
 
 const ROLE_PATH: Record<Role, string> = { mc: "/mc", team: "/team", post: "/post" };
+const WHOAMI_POLL_MS = 15000;
 
 type State =
   | { kind: "loading" }
   | { kind: "error"; message: string; joinHref: string }
   | { kind: "wrong_role"; role: Role }
   | { kind: "ok"; identity: Identity };
+
+function failState(token: string, errorCode: string | undefined, args?: Record<string, unknown>): State {
+  const changed = errorCode === "BAD_TOKEN";
+  const saved = listMyGames().find((g) => g.token === token);
+  const joinHref = saved ? `/join?code=${encodeURIComponent(saved.code)}` : "/join";
+  if (changed) {
+    forgetGame(token);
+    clearToken();
+    clearReadPass();
+  }
+  return {
+    kind: "error",
+    message: changed ? copy.common.loginChanged : errorMessage(errorCode, args),
+    joinHref,
+  };
+}
 
 // Checks the stored token and only renders children for the right role.
 export function RoleGate({ role, children }: { role: Role; children: (identity: Identity) => ReactNode }) {
@@ -31,51 +48,36 @@ export function RoleGate({ role, children }: { role: Role; children: (identity: 
       return;
     }
     let cancelled = false;
-    void (async () => {
+
+    async function check(initial: boolean) {
       const res = await sendAction<Identity>("whoami", { device_id: getDeviceId() }, { token });
       if (cancelled) return;
       if (!res.ok || !res.state) {
-        const changed = res.error_code === "BAD_TOKEN";
-        const saved = listMyGames().find((g) => g.token === token);
-        const joinHref = saved ? `/join?code=${encodeURIComponent(saved.code)}` : "/join";
-        if (changed) {
-          forgetGame(token);
-          clearToken();
-          clearReadPass();
-        }
-        setState({
-          kind: "error",
-          message: changed ? copy.common.loginChanged : errorMessage(res.error_code, res.args),
-          joinHref,
-        });
+        // Polls only force-exit on a dead token; other errors keep the session up.
+        if (!initial && res.error_code !== "BAD_TOKEN") return;
+        setState(failState(token!, res.error_code, res.args));
         return;
       }
       if (res.state.role !== role) {
         setState({ kind: "wrong_role", role: res.state.role });
         return;
       }
-      const pass = await ensureRolePass(token);
-      if (cancelled) return;
-      if (!pass.ok) {
-        const changed = pass.error_code === "BAD_TOKEN";
-        const saved = listMyGames().find((g) => g.token === token);
-        const joinHref = saved ? `/join?code=${encodeURIComponent(saved.code)}` : "/join";
-        if (changed) {
-          forgetGame(token);
-          clearToken();
-          clearReadPass();
+      if (initial) {
+        const pass = await ensureRolePass(token!);
+        if (cancelled) return;
+        if (!pass.ok) {
+          setState(failState(token!, pass.error_code, pass.args));
+          return;
         }
-        setState({
-          kind: "error",
-          message: changed ? copy.common.loginChanged : errorMessage(pass.error_code, pass.args),
-          joinHref,
-        });
-        return;
       }
       setState({ kind: "ok", identity: res.state });
-    })();
+    }
+
+    void check(true);
+    const poll = setInterval(() => void check(false), WHOAMI_POLL_MS);
     return () => {
       cancelled = true;
+      clearInterval(poll);
     };
   }, [role]);
 
