@@ -1,5 +1,5 @@
 import "server-only";
-import { importJWK, SignJWT, type JWK, type KeyLike } from "jose";
+import { importJWK, SignJWT, type JWK } from "jose";
 
 export type PassClaims = {
   sub: string;
@@ -34,7 +34,7 @@ function loadJwk(): SigningJwk {
   return clean;
 }
 
-let keyPromise: Promise<{ key: KeyLike | Uint8Array; alg: string; kid?: string }> | null = null;
+let keyPromise: Promise<{ key: CryptoKey | Uint8Array; alg: string; kid?: string }> | null = null;
 
 function signingKey() {
   if (!keyPromise) {
