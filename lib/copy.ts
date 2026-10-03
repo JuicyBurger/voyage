@@ -155,6 +155,7 @@ export const copy = {
     busy: "Busy",
     servingYou: "Serving you",
     waiting: (n: number) => `${n} waiting`,
+    challengeTitle: (post: string) => `Challenge at the ${post}`,
     journey: "Journey log",
     noJourney: "Your story starts here.",
     safeFor: (time: string) => `You are safe from raids for ${time}.`,
@@ -196,20 +197,22 @@ export const copy = {
     fail: (amount: number) => `Fail (+${amount})`,
     sell: "Sell",
     stock: (n: number) => `${n} left`,
-    buy: (price: number) => `${price} gold`,
+    buy: (price: number) => `Cost ${price}`,
     serving: (team: string) => `Serving: ${team}`,
     notServing: "Serving: nobody",
     done: "Done",
     waiting: "Waiting",
     undo: (what: string, left: string) => `Undo: ${what} (${left})`,
-    toastJob: (team: string, amount: number, doubled: boolean) =>
-      `${team} +${amount} gold${doubled ? " (Double Profit!)" : ""}`,
+    toastJob: (team: string, amount: number, doubled: boolean, goldRush?: boolean) => {
+      const extra = [doubled && "Double Profit!", goldRush && "Gold Rush!"].filter(Boolean).join(" ");
+      return `${team} +${amount} gold${extra ? ` (${extra})` : ""}`;
+    },
     toastBuy: (team: string, item: string, price: number) => `${team} bought the ${item} for ${price} gold`,
     toastUndo: "Undone.",
     reason: {
       owned: "Already owned",
       noStock: "None left",
-      gold: (need: number) => `Needs ${need} gold`,
+      gold: (short: number) => `Short by ${short}`,
       shield: "Already has one",
       closed: "Not now",
     },
@@ -311,6 +314,8 @@ export const copy = {
     title: "THE FINAL VOYAGE",
     waiting: "Who reached the island first?",
     winner: (team: string) => `${team} win!`,
+    scoresTitle: "Final scores",
+    scoresWaiting: "Waiting for the MC to start the reveal.",
     mcTitle: "Final reveal",
     mcHint: "End the game first. Then start the reveal and tap Next for each place, from last to first.",
     start: "Start the reveal",
@@ -527,7 +532,7 @@ export function stripText(e: WorldEvent): string {
   const p = e.payload;
   switch (e.kind) {
     case "gold_rush":
-      return `Gold Rush: +${p.bonus} gold per passed job`;
+      return `Gold Rush: +${p.bonus} gold per passed job (Double Profit doubles it)`;
     case "storm":
       return "Storm: nobody can work, buy or raid";
     case "market_sale":
@@ -564,9 +569,13 @@ export function bannerFor(e: WorldEvent): Banner | null {
         tone: "info",
       };
     case "end":
-      return { title: "LAND HO!", body: "The game is over. Look at the big screen.", tone: "info" };
+      return { title: "LAND HO!", body: "The game is over. Scores are on your phone.", tone: "info" };
     case "gold_rush":
-      return { title: "GOLD RUSH!", body: `Passed jobs pay +${p.bonus} gold. Hurry!`, tone: "good" };
+      return {
+        title: "GOLD RUSH!",
+        body: `Passed jobs pay +${p.bonus} gold. Double Profit doubles that bonus. Hurry!`,
+        tone: "good",
+      };
     case "storm":
       return { title: "STORM!", body: "Find shelter at a post. Nobody can work or raid.", tone: "bad" };
     case "supply_ship":
@@ -602,7 +611,7 @@ export function bannerFor(e: WorldEvent): Banner | null {
 export const nextStepText = {
   notStarted: "Wait for the MC to start the game.",
   paused: "The game is paused. Wait for the MC.",
-  ended: "The game is over. Look at the big screen.",
+  ended: "The game is over. Your place is on this screen.",
   boatDone: (goldPerPoint: number) =>
     `Your boat is done! Keep earning gold. Every ${goldPerPoint} gold is 1 point.`,
   buy: (post: string, item: string, price: number) => `Go to the ${post} and buy the ${item} (${price} gold).`,

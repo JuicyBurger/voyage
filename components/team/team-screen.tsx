@@ -33,13 +33,15 @@ export function TeamScreen({ identity }: { identity: Identity }) {
   const team = data.teams.find((t) => t.id === teamId)!;
   const c = teamColor(team.color);
   const safeMs = team.immune_until ? Date.parse(team.immune_until) - now : 0;
+  const servingPost = data.posts.find((p) => p.serving_team_id === team.id);
+  const challenge = servingPost ? data.game.config.post_rules?.[servingPost.kind] : null;
 
   return (
     <div className="flex min-h-dvh flex-col" style={{ background: c.soft }}>
       <GameBar game={data.game} events={data.events} title={team.name} accent={c.bg} connected={connected} />
       <EventBanner events={data.events} />
       <StormOverlay game={data.game} events={data.events} />
-      <RevealOverlay game={data.game} me={team.id} />
+      <RevealOverlay game={data.game} me={team.id} scores={data.scores} />
       <IncomingRaid raids={data.raids} teams={data.teams} me={team} />
 
       <main className="mx-auto flex w-full max-w-xl flex-col gap-4 p-3 pb-10">
@@ -66,6 +68,17 @@ export function TeamScreen({ identity }: { identity: Identity }) {
             </div>
           </CardContent>
         </Card>
+
+        {servingPost && challenge && (
+          <Card className="border-2 border-amber-400 bg-amber-50">
+            <CardHeader>
+              <CardTitle className="text-lg">{copy.team.challengeTitle(servingPost.name)}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-base leading-snug">{challenge}</p>
+            </CardContent>
+          </Card>
+        )}
 
         <BoatCard data={data} team={team} accent={c.bg} />
         <ItemsCard team={team} accent={c.bg} onChange={refresh} />

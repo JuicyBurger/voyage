@@ -49,12 +49,11 @@ export function PostScreen({ identity }: { identity: Identity }) {
 
   function selectTeam(team: Team) {
     setSelectedId(team.id);
-    if (post.serving_team_id !== team.id) void sendAction("set_serving", { team_id: team.id });
+    if (post.serving_team_id !== team.id) void run("set_serving", { team_id: team.id });
   }
 
   function clearServing() {
-    setSelectedId(null);
-    void sendAction("set_serving", { team_id: null });
+    void run("set_serving", { team_id: null }, () => setSelectedId(null));
   }
 
   // This post's last job or sale that can still be undone.
@@ -79,7 +78,7 @@ export function PostScreen({ identity }: { identity: Identity }) {
       />
       <EventBanner events={data.events} />
       <StormOverlay game={data.game} events={data.events} />
-      <RevealOverlay game={data.game} />
+      <RevealOverlay game={data.game} scores={data.scores} />
 
       <main className="mx-auto flex w-full max-w-xl flex-col gap-4 p-3">
         <div className="grid grid-cols-5 gap-2">
@@ -130,7 +129,7 @@ export function PostScreen({ identity }: { identity: Identity }) {
                 {serving ? copy.post.serving(serving.name) : copy.post.notServing}
               </span>
               {serving && (
-                <Button variant="secondary" onClick={clearServing} className="h-11 px-5 text-base">
+                <Button variant="secondary" disabled={busy} onClick={clearServing} className="h-11 px-5 text-base">
                   {copy.post.done}
                 </Button>
               )}
@@ -216,13 +215,20 @@ function SelectedTeam({
     if (item === "flag" && team.has_flag) return copy.post.reason.owned;
     if (item === "sword" && team.has_sword) return copy.post.reason.owned;
     if (item === "shield" && team.shield_count >= 1) return copy.post.reason.shield;
-    if (team.gold < price) return copy.post.reason.gold(price);
+    if (team.gold < price) return copy.post.reason.gold(price - team.gold);
     return null;
   }
 
   function job(passed: boolean) {
     void run("record_job", { team_id: team.id, passed }, (s) =>
-      toast.success(copy.post.toastJob(team.name, Number(s.amount), Boolean(s.doubled))),
+      toast.success(
+        copy.post.toastJob(
+          team.name,
+          Number(s.amount),
+          Boolean(s.doubled),
+          Boolean(s.gold_rush) || (passed && rush > 0),
+        ),
+      ),
     );
   }
 

@@ -52,44 +52,78 @@ export function RevealView({ game, big = false, me }: { game: Game; big?: boolea
 
       <div className="flex w-full flex-col gap-3">
         <AnimatePresence initial={false}>
-          {shown.map((s) => {
-            const c = teamColor(s.color);
-            return (
-              <motion.div
-                key={s.team_id}
-                layout
-                initial={{ opacity: 0, y: -40, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                className={`flex items-center gap-4 rounded-2xl px-5 text-white shadow-lg ${big ? "py-5" : "py-3"} ${
-                  me === s.team_id ? "ring-4 ring-yellow-300" : ""
-                }`}
-                style={{ background: c.bg }}
-              >
-                <div className={`shrink-0 font-black ${big ? "w-32 text-5xl" : "w-16 text-2xl"}`}>{copy.scores.place(s.place)}</div>
-                <div className="min-w-0 flex-1">
-                  <div className={`truncate font-extrabold ${big ? "text-4xl" : "text-xl"}`}>{s.name}</div>
-                  <div className={`opacity-90 ${big ? "text-xl" : "text-sm"}`}>{copy.scores.breakdown(s)}</div>
-                </div>
-                <div className="text-right">
-                  <div className={`font-black tabular-nums ${big ? "text-6xl" : "text-3xl"}`}>{s.total}</div>
-                  <div className="text-xs uppercase opacity-80">{copy.scores.points}</div>
-                </div>
-              </motion.div>
-            );
-          })}
+          {shown.map((s) => (
+            <ScoreRow key={s.team_id} score={s} me={me} big={big} />
+          ))}
         </AnimatePresence>
       </div>
     </div>
   );
 }
 
-// Full-screen cover for team and post phones while the reveal runs.
-export function RevealOverlay({ game, me }: { game: Game; me?: string }) {
-  if (game.reveal_step === null) return null;
+function ScoreRow({ score: s, me, big = false }: { score: Score; me?: string; big?: boolean }) {
+  const c = teamColor(s.color);
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: -40, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+      className={`flex items-center gap-4 rounded-2xl px-5 text-white shadow-lg ${big ? "py-5" : "py-3"} ${
+        me === s.team_id ? "ring-4 ring-yellow-300" : ""
+      }`}
+      style={{ background: c.bg }}
+    >
+      <div className={`shrink-0 font-black ${big ? "w-32 text-5xl" : "w-16 text-2xl"}`}>{copy.scores.place(s.place)}</div>
+      <div className="min-w-0 flex-1">
+        <div className={`truncate font-extrabold ${big ? "text-4xl" : "text-xl"}`}>{s.name}</div>
+        <div className={`opacity-90 ${big ? "text-xl" : "text-sm"}`}>{copy.scores.breakdown(s)}</div>
+      </div>
+      <div className="text-right">
+        <div className={`font-black tabular-nums ${big ? "text-6xl" : "text-3xl"}`}>{s.total}</div>
+        <div className="text-xs uppercase opacity-80">{copy.scores.points}</div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Full table shown on team/post phones after End game, before the MC starts the reveal.
+function EndedScoresTable({ scores, me }: { scores: Score[]; me?: string }) {
+  const ranked = [...scores].sort((a, b) => a.place - b.place);
+  return (
+    <div className="flex w-full max-w-md flex-col items-center gap-4">
+      <h2 className="text-center text-4xl font-black tracking-tight">{copy.reveal.scoresTitle}</h2>
+      <p className="text-center text-lg font-semibold opacity-80">{copy.reveal.scoresWaiting}</p>
+      <div className="flex w-full flex-col gap-3">
+        {ranked.map((s) => (
+          <ScoreRow key={s.team_id} score={s} me={me} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Full-screen cover for team and post phones after the game ends.
+export function RevealOverlay({
+  game,
+  me,
+  scores,
+}: {
+  game: Game;
+  me?: string;
+  scores?: Score[] | null;
+}) {
+  if (game.status !== "ended") return null;
+
+  const revealing = game.reveal_step !== null;
+
   return (
     <div className="fixed inset-0 z-50 flex justify-center overflow-y-auto bg-slate-900 p-5 pt-10 text-white">
-      <RevealView game={game} me={me} />
+      {revealing ? (
+        <RevealView game={game} me={me} />
+      ) : (
+        <EndedScoresTable scores={scores ?? []} me={me} />
+      )}
     </div>
   );
 }
