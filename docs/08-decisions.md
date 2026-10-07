@@ -32,3 +32,6 @@ These were agreed before coding, then followed in the functions. Later choices a
 - Player text stays in `lib/copy.ts`.
 - A team with 0 gold cannot be raided. After the code is confirmed, `start_raid` returns `NOTHING_TO_STEAL` and does not use a raid, a Shield, or the dice.
 - Bounty targets are fixed when the MC fires it. The event stores those team ids. The bonus stays on the named teams for the whole event, even if someone else becomes richer.
+- Pace check keys are event-clock minutes **20** and **25** (not 15 and 25). The earlier numbers were measured five minutes late, so a normal game looked "Slow" at minute 15.
+- Jobs per post is **6** (was 4). The simulation finishes more boats (about 4.3 → 4.8 of 5) because teams wait in fewer lines.
+- Post job texts on the phones match the jobs posts actually run (Human Boat twists, Team Yel-yel, Landmark Cards, Silent Pirate, Count Together).

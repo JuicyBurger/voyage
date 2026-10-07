@@ -101,6 +101,7 @@ Turn the switch off before the real game. You can only change it while the game 
 - Check the venue Wi-Fi with one phone: scan a card and confirm the MC clock appears.
 - Give each post its card and each team its phone. The TV opens `/screen/YOURCODE` (the six-letter code is on the QR page). Tap the TV once so banners can play sound.
 - MC: **Ready**, then **Start game** at the end of the story.
+- Pace check at minutes 20 and 25. Each team can do 6 jobs at each post.
 - At minute 40 the panel flashes **Time for Last Call**. Tap it. Posts can still serve the teams in line. No more raids.
 - After Last Call, posts can still record jobs and sales until the MC taps **End**. End the game at about minute 41.
 - **End game**, then **Start the reveal**. Tap through the places from last to first. The TV and every phone follow.

@@ -71,9 +71,11 @@ async function main() {
   check("that tap paid only once (40 gold)", paid!.gold === 40, paid);
 
   const { gameId, postToken, teams, posts } = await freshGame();
+  const { data: cfgRow } = await db.from("games").select("config").eq("id", gameId).single();
+  const jobsPerPost = (cfgRow!.config as { jobs_per_post: number }).jobs_per_post;
 
-  console.log("All 5 posts, all 5 teams, 4 waves at once");
-  for (let wave = 0; wave < 4; wave++) {
+  console.log(`All 5 posts, all 5 teams, ${jobsPerPost} waves at once`);
+  for (let wave = 0; wave < jobsPerPost; wave++) {
     const jobs = posts.flatMap((p) =>
       teams.map((t) => act(postToken(p.kind), "record_job", { team_id: t.id, passed: true })),
     );
@@ -85,7 +87,11 @@ async function main() {
   const over = await Promise.all(
     posts.flatMap((p) => teams.map((t) => act(postToken(p.kind), "record_job", { team_id: t.id, passed: true }))),
   );
-  check("the 5th job at every post is refused", over.every((r) => r.error_code === "JOB_LIMIT"), over.find((r) => r.error_code !== "JOB_LIMIT"));
+  check(
+    `the ${jobsPerPost + 1}th job at every post is refused`,
+    over.every((r) => r.error_code === "JOB_LIMIT"),
+    over.find((r) => r.error_code !== "JOB_LIMIT"),
+  );
 
   console.log("5 teams buy the last hulls at the same moment");
   const buys = await Promise.all(teams.map((t) => act(postToken("shipwright"), "buy_item", { team_id: t.id, item: "hull" })));

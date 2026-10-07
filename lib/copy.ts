@@ -276,7 +276,7 @@ export const copy = {
     paceOn: "On pace",
     paceSlow: "Slow: consider the price dial",
     paceFast: "Fast: ask posts to use the full 60 seconds",
-    paceWait: "Pace check starts at minute 15.",
+    paceWait: "Pace check starts at minute 20.",
     feed: "Activity feed",
     noFeed: "Nothing yet.",
     links: { setup: "Setup", lobby: "Phones", qr: "QR codes", tv: "TV screen" },

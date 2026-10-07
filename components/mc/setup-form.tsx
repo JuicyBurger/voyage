@@ -30,7 +30,7 @@ const NUMBER_DEFAULTS: Record<string, number> = {
   "job_pay.inn": 10,
   "job_pay.blacksmith": 10,
   "fail_pay": 4,
-  "jobs_per_post": 4,
+  "jobs_per_post": 6,
   "items.flag.price": 15,
   "items.flag.raids": 3,
   "items.sword.price": 15,

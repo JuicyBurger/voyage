@@ -146,29 +146,34 @@ async function rulesForJobsAndBuying() {
   check("Not enough gold for Hull", poor.error_code === "NOT_ENOUGH_GOLD" && poor.args?.need === 55, poor);
 
   console.log("Job limit");
-  for (let i = 0; i < 4; i++) await act(inn, "record_job", { team_id: BEARS, passed: true });
-  const fifth = await act(inn, "record_job", { team_id: BEARS, passed: true });
-  check("5th Inn job is rejected with JOB_LIMIT", fifth.error_code === "JOB_LIMIT", fifth);
-  check("Bears 7 + 4x10 = 47", (await team(BEARS)).gold === 47);
+  const { data: cfgRow } = await db.from("games").select("config").eq("id", gameId).single();
+  const jobsPerPost = (cfgRow!.config as { jobs_per_post: number }).jobs_per_post;
+  for (let i = 0; i < jobsPerPost; i++) await act(inn, "record_job", { team_id: BEARS, passed: true });
+  const overLimit = await act(inn, "record_job", { team_id: BEARS, passed: true });
+  const goldAtLimit = 7 + jobsPerPost * 10;
+  check("job over the post limit is JOB_LIMIT", overLimit.error_code === "JOB_LIMIT", overLimit);
+  check(`Bears 7 + ${jobsPerPost}x10 = ${goldAtLimit}`, (await team(BEARS)).gold === goldAtLimit);
+  check("gold unchanged on JOB_LIMIT", (await team(BEARS)).gold === goldAtLimit);
 
   console.log("Double Profit");
   check("arm Double Profit", (await act(teamToken(1), "arm_double", { on: true })).ok);
   await act(sailmaker, "record_job", { team_id: BEARS, passed: false });
   let b = await team(BEARS);
-  check("Fail with Double armed pays 4, stays armed", b.gold === 51 && b.double_armed && !b.double_used, b);
+  check("Fail with Double armed pays 4, stays armed", b.gold === goldAtLimit + 4 && b.double_armed && !b.double_used, b);
   await act(sailmaker, "record_job", { team_id: BEARS, passed: true });
   b = await team(BEARS);
-  check("Pass with Double armed pays 24, Double used", b.gold === 75 && !b.double_armed && b.double_used, b);
+  const afterDouble = goldAtLimit + 4 + 24;
+  check("Pass with Double armed pays 24, Double used", b.gold === afterDouble && !b.double_armed && b.double_used, b);
   const rearm = await act(teamToken(1), "arm_double", { on: true });
   check("Cannot arm Double again", rearm.error_code === "DOUBLE_USED", rearm);
 
   console.log("Undo");
   await act(shipwright, "buy_item", { team_id: BEARS, item: "hull" });
   b = await team(BEARS);
-  check("Buy Hull -> 20 gold, has Hull", b.gold === 20 && b.has_hull, b);
+  check("Buy Hull -> gold and has Hull", b.gold === afterDouble - 55 && b.has_hull, b);
   const undo = await act(shipwright, "undo_last");
   b = await team(BEARS);
-  check("Undo Hull: gold back", undo.ok && b.gold === 75, undo);
+  check("Undo Hull: gold back", undo.ok && b.gold === afterDouble, undo);
   check("Undo Hull: part removed", !b.has_hull);
   check("Undo Hull: stock back to 3", (await stock(gameId, "hull")) === 3);
 
@@ -188,17 +193,17 @@ async function rulesForJobsAndBuying() {
   );
 
   console.log("Boat finished");
-  // Bears: 75 gold, have Mast. Earn enough for Hull 55 + Sail 45 + Map 35 = 135.
+  // Bears have Mast and afterDouble gold. Earn enough for Hull 55 + Sail 45 + Map 35 = 135.
   for (let i = 0; i < 3; i++) await act(shipwright, "record_job", { team_id: BEARS, passed: true });
   for (let i = 0; i < 2; i++) await act(sailmaker, "record_job", { team_id: BEARS, passed: true });
   for (let i = 0; i < 4; i++) await act(postToken("blacksmith"), "record_job", { team_id: BEARS, passed: true });
-  // 75 + 36 + 24 + 40 = 175
+  const beforeParts = afterDouble + 36 + 24 + 40;
   await act(shipwright, "buy_item", { team_id: BEARS, item: "hull" });
   await act(sailmaker, "buy_item", { team_id: BEARS, item: "sail" });
   const lastPart = await act(cartographer, "buy_item", { team_id: BEARS, item: "map" });
   b = await team(BEARS);
   check("Boat finished: rank 1", lastPart.ok && b.boat_rank === 1 && !!b.boat_done_at, { lastPart, b });
-  check("Bears gold 175 - 135 = 40", b.gold === 40, b.gold);
+  check(`Bears gold ${beforeParts} - 135 = ${beforeParts - 135}`, b.gold === beforeParts - 135, b.gold);
   const { data: ev } = await db.from("world_events").select("*").eq("game_id", gameId).eq("kind", "boat_finished");
   check("boat_finished event was sent", (ev ?? []).length === 1);
 
@@ -523,10 +528,38 @@ async function rulesForHardening() {
 async function rulesForReviewFixes() {
   console.log("Review fixes");
   {
-    const { gameId } = await newGame();
+    const { gameId, mc, teamId, postToken } = await newGame();
     const { data } = await db.from("games").select("config").eq("id", gameId).single();
-    const rule = (data!.config as { post_rules: { shipwright: string } }).post_rules.shipwright;
-    check("new game shipwright job starts with Human Boat", rule.startsWith("Human Boat"), rule);
+    const cfg = data!.config as {
+      jobs_per_post: number;
+      pace_check: Record<string, unknown>;
+      post_rules: { shipwright: string; blacksmith: string };
+    };
+    check("new game jobs_per_post is 6", cfg.jobs_per_post === 6, cfg.jobs_per_post);
+    check(
+      "new game pace_check keys are 20 and 25",
+      JSON.stringify(Object.keys(cfg.pace_check).sort()) === JSON.stringify(["20", "25"]),
+      Object.keys(cfg.pace_check),
+    );
+    check("new game shipwright job starts with Human Boat", cfg.post_rules.shipwright.startsWith("Human Boat"), cfg.post_rules.shipwright);
+    check(
+      "new game blacksmith job starts with Count Together",
+      cfg.post_rules.blacksmith.startsWith("Count Together"),
+      cfg.post_rules.blacksmith,
+    );
+
+    console.log("Jobs per post limit is 6, and per post");
+    const BEARS = teamId(1);
+    const inn = postToken("inn");
+    const blacksmith = postToken("blacksmith");
+    await startGame(mc);
+    for (let i = 0; i < 6; i++) await act(inn, "record_job", { team_id: BEARS, passed: true });
+    const goldAfter6 = (await team(BEARS)).gold;
+    const seventh = await act(inn, "record_job", { team_id: BEARS, passed: true });
+    check("7th Inn job is JOB_LIMIT", seventh.error_code === "JOB_LIMIT", seventh);
+    check("7th Inn job does not change gold", (await team(BEARS)).gold === goldAfter6);
+    const otherPost = await act(blacksmith, "record_job", { team_id: BEARS, passed: true });
+    check("after 6 at Inn, Blacksmith job still works", otherPost.ok, otherPost);
   }
 
   const { data: base } = await db.from("games").select("config").order("created_at", { ascending: false }).limit(1).single();

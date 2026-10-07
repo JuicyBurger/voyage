@@ -9,7 +9,7 @@ import { PARTS } from "@/lib/types";
 import type { GameData } from "@/lib/use-game";
 import { useNow } from "@/lib/use-now";
 
-// Compares parts bought by all teams with the config numbers at minutes 15 and 25.
+// Compares parts bought by all teams with the config numbers at minutes 20 and 25.
 export function PaceCheck({ data }: { data: GameData }) {
   const now = useNow(1000);
   const minute = eventMs(data.game, now) / 60000;
