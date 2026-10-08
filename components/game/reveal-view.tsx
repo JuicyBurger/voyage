@@ -87,18 +87,12 @@ function ScoreRow({ score: s, me, big = false }: { score: Score; me?: string; bi
   );
 }
 
-// Full table shown on team/post phones after End game, before the MC starts the reveal.
-function EndedScoresTable({ scores, me }: { scores: Score[]; me?: string }) {
-  const ranked = [...scores].sort((a, b) => a.place - b.place);
+// Waiting cover on team/post phones after End, before the MC starts the one-by-one reveal.
+function RevealWaiting() {
   return (
-    <div className="flex w-full max-w-md flex-col items-center gap-4">
+    <div className="flex w-full max-w-md flex-col items-center gap-4 py-16">
       <h2 className="text-center text-4xl font-black tracking-tight">{copy.reveal.scoresTitle}</h2>
-      <p className="text-center text-lg font-semibold opacity-80">{copy.reveal.scoresWaiting}</p>
-      <div className="flex w-full flex-col gap-3">
-        {ranked.map((s) => (
-          <ScoreRow key={s.team_id} score={s} me={me} />
-        ))}
-      </div>
+      <p className="text-center text-xl font-semibold opacity-80">{copy.reveal.scoresWaiting}</p>
     </div>
   );
 }
@@ -107,7 +101,6 @@ function EndedScoresTable({ scores, me }: { scores: Score[]; me?: string }) {
 export function RevealOverlay({
   game,
   me,
-  scores,
 }: {
   game: Game;
   me?: string;
@@ -119,11 +112,7 @@ export function RevealOverlay({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center overflow-y-auto bg-slate-900 p-5 pt-10 text-white">
-      {revealing ? (
-        <RevealView game={game} me={me} />
-      ) : (
-        <EndedScoresTable scores={scores ?? []} me={me} />
-      )}
+      {revealing ? <RevealView game={game} me={me} /> : <RevealWaiting />}
     </div>
   );
 }

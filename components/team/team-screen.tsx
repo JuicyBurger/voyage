@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Flag, Shield, ShieldCheck, Sword, Swords, Zap } from "lucide-react";
+import { Check, Flag, Lock, Shield, ShieldCheck, Sword, Swords, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { EventBanner } from "@/components/game/event-banner";
 import { GameBar } from "@/components/game/game-bar";
@@ -9,8 +9,10 @@ import { RevealOverlay } from "@/components/game/reveal-view";
 import { StormOverlay } from "@/components/game/storm-overlay";
 import { IncomingRaid } from "@/components/team/incoming-raid";
 import { RaidCodeCard } from "@/components/team/raid-code-card";
+import { RaidLockOverlay } from "@/components/team/raid-lock-overlay";
 import { RejoinCodeCard } from "@/components/game/rejoin-code-card";
 import { RaidSheet } from "@/components/team/raid-sheet";
+import { UnlockSheet } from "@/components/team/unlock-sheet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sendAction } from "@/lib/api";
 import { formatClock } from "@/lib/clock";
@@ -27,6 +29,7 @@ export function TeamScreen({ identity }: { identity: Identity }) {
   const { data, connected, refresh } = useGame(identity.game_id, { column: "team_id", value: teamId }, 50);
   const now = useNow(1000);
   const [raidOpen, setRaidOpen] = useState(false);
+  const [unlockOpen, setUnlockOpen] = useState(false);
 
   if (!data) return <main className="p-6 text-lg">{copy.common.loading}</main>;
 
@@ -35,12 +38,14 @@ export function TeamScreen({ identity }: { identity: Identity }) {
   const safeMs = team.immune_until ? Date.parse(team.immune_until) - now : 0;
   const servingPost = data.posts.find((p) => p.serving_team_id === team.id);
   const challenge = servingPost ? data.game.config.post_rules?.[servingPost.kind] : null;
+  const hasPrisoners = data.teams.some((t) => t.raid_locked_by === team.id);
 
   return (
     <div className="flex min-h-dvh flex-col" style={{ background: c.soft }}>
       <GameBar game={data.game} events={data.events} title={team.name} accent={c.bg} connected={connected} />
       <EventBanner events={data.events} />
       <StormOverlay game={data.game} events={data.events} />
+      <RaidLockOverlay game={data.game} me={team} teams={data.teams} />
       <RevealOverlay game={data.game} me={team.id} scores={data.scores} />
       <IncomingRaid raids={data.raids} teams={data.teams} me={team} />
 
@@ -92,7 +97,23 @@ export function TeamScreen({ identity }: { identity: Identity }) {
             <Swords className="size-7" /> {copy.raid.button(team.raids_left)}
           </button>
         )}
-        <RaidSheet data={data} team={team} open={raidOpen} onOpenChange={setRaidOpen} onDone={refresh} />
+        {hasPrisoners && (
+          <button
+            onClick={() => setUnlockOpen(true)}
+            className="flex min-h-14 items-center justify-center gap-2 rounded-xl border-2 border-red-700 bg-red-50 text-xl font-black text-red-800 active:scale-[0.98]"
+          >
+            <Lock className="size-6" /> {copy.raid.unlockTitle}
+          </button>
+        )}
+        <RaidSheet
+          data={data}
+          team={team}
+          open={raidOpen}
+          onOpenChange={setRaidOpen}
+          onDone={refresh}
+          onUnlock={() => setUnlockOpen(true)}
+        />
+        <UnlockSheet data={data} team={team} open={unlockOpen} onOpenChange={setUnlockOpen} onDone={refresh} />
 
         <RaidCodeCard team={team} accent={c.bg} />
         <RejoinCodeCard accent={c.bg} />
@@ -193,27 +214,29 @@ function PostsCard({ data, team }: { data: GameData; team: Team }) {
         <CardTitle className="text-lg">{copy.team.posts}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col divide-y">
-        {data.posts.map((p) => {
-          const Icon = POST_ICONS[p.kind];
-          const done = data.jobCounts.find((j) => j.team_id === team.id && j.post_id === p.id)?.count ?? 0;
-          const status =
-            p.serving_team_id === team.id ? copy.team.servingYou : p.serving_team_id ? copy.team.busy : copy.team.free;
-          return (
-            <div key={p.id} className="flex items-center gap-3 py-2">
-              <Icon className="size-6 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="font-semibold">{p.name}</div>
-                <div className="text-sm text-muted-foreground">{copy.team.jobsLeft(total - done, total)}</div>
-              </div>
-              <div className="text-right text-sm">
-                <div className={p.serving_team_id && p.serving_team_id !== team.id ? "text-amber-700" : "text-green-700"}>
-                  {status}
+        {data.posts
+          .filter((p) => p.active !== false)
+          .map((p) => {
+            const Icon = POST_ICONS[p.kind];
+            const done = data.jobCounts.find((j) => j.team_id === team.id && j.post_id === p.id)?.count ?? 0;
+            const status =
+              p.serving_team_id === team.id ? copy.team.servingYou : p.serving_team_id ? copy.team.busy : copy.team.free;
+            return (
+              <div key={p.id} className="flex items-center gap-3 py-2">
+                <Icon className="size-6 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold">{p.name}</div>
+                  <div className="text-sm text-muted-foreground">{copy.team.jobsLeft(total - done, total)}</div>
                 </div>
-                {p.waiting_count > 0 && <div className="text-muted-foreground">{copy.team.waiting(p.waiting_count)}</div>}
+                <div className="text-right text-sm">
+                  <div className={p.serving_team_id && p.serving_team_id !== team.id ? "text-amber-700" : "text-green-700"}>
+                    {status}
+                  </div>
+                  {p.waiting_count > 0 && <div className="text-muted-foreground">{copy.team.waiting(p.waiting_count)}</div>}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
       </CardContent>
     </Card>
   );

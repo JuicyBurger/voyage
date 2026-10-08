@@ -28,7 +28,7 @@ export default function McPage() {
 
 function McScreen({ identity }: { identity: Identity }) {
   const router = useRouter();
-  const { data, connected } = useGame(identity.game_id, "all", 50);
+  const { data, connected, refresh } = useGame(identity.game_id, "all", 50);
 
   useEffect(() => {
     if (!data) return;
@@ -57,7 +57,7 @@ function McScreen({ identity }: { identity: Identity }) {
       <EventBanner events={data.events} />
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <ClockControls game={data.game} />
+          <ClockControls game={data.game} onDone={refresh} />
           <RehearsalSwitch game={data.game} />
           <div className="flex flex-wrap gap-2">
             <Link href="/mc/setup" className={link}>
@@ -81,7 +81,7 @@ function McScreen({ identity }: { identity: Identity }) {
             <PostGameActions />
           </>
         )}
-        <EventPanel data={data} />
+        <EventPanel data={data} onDone={refresh} />
         <CodesCard />
         <TeamsTable data={data} />
         <div className="grid gap-4 lg:grid-cols-3">

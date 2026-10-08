@@ -10,7 +10,7 @@ import type { Game } from "@/lib/types";
 import { useNow } from "@/lib/use-now";
 
 // Start / Pause / Resume / Last Call / End, depending on the game state.
-export function ClockControls({ game }: { game: Game }) {
+export function ClockControls({ game, onDone }: { game: Game; onDone?: () => void }) {
   const now = useNow();
   const minuteNow = eventMs(game, now) / 60000;
   const timeToEnd = game.status === "last_call" && minuteNow >= 41;
@@ -22,6 +22,7 @@ export function ClockControls({ game }: { game: Game }) {
     const res = await sendAction("game_control", { action });
     setBusy(false);
     if (!res.ok) toast.error(errorMessage(res.error_code, res.args));
+    else onDone?.();
   }
 
   const btn = (action: string, label: string, className = "") => (

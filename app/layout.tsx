@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Voyage Companion",
+  title: "Voyage",
   description: "Live bookkeeping for the pirate boat game",
 };
 

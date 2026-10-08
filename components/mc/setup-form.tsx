@@ -9,6 +9,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { sendAction } from "@/lib/api";
 import { TEAM_COLORS, teamColor } from "@/lib/colors";
 import { copy, errorMessage } from "@/lib/copy";
@@ -31,6 +32,7 @@ const NUMBER_DEFAULTS: Record<string, number> = {
   "job_pay.blacksmith": 10,
   "fail_pay": 4,
   "jobs_per_post": 6,
+  "job_timer_seconds": 45,
   "items.flag.price": 15,
   "items.flag.raids": 3,
   "items.sword.price": 15,
@@ -43,28 +45,29 @@ const NUMBER_DEFAULTS: Record<string, number> = {
 
 // [label, path into config]
 const NUMBER_FIELDS: [string, string[]][] = [
-  ["Start gold", ["start_gold"]],
-  ["Hull price", ["parts", "hull", "price"]],
-  ["Mast price", ["parts", "mast", "price"]],
-  ["Sail price", ["parts", "sail", "price"]],
-  ["Map price", ["parts", "map", "price"]],
-  ["Stock at start (each part)", ["stock_start"]],
-  ["Supply Ship adds", ["supply_ship_add"]],
-  ["Pay: Shipwright", ["job_pay", "shipwright"]],
-  ["Pay: Sailmaker", ["job_pay", "sailmaker"]],
-  ["Pay: Cartographer", ["job_pay", "cartographer"]],
-  ["Pay: Harbor Inn", ["job_pay", "inn"]],
-  ["Pay: Blacksmith", ["job_pay", "blacksmith"]],
-  ["Pay for a failed job", ["fail_pay"]],
-  ["Jobs per post (each team)", ["jobs_per_post"]],
-  ["Pirate Flag price", ["items", "flag", "price"]],
-  ["Raids per Flag", ["items", "flag", "raids"]],
-  ["Sword price", ["items", "sword", "price"]],
-  ["Sword bonus", ["items", "sword", "bonus"]],
-  ["Shield price", ["items", "shield", "price"]],
-  ["Raid steals", ["raid", "steal"]],
-  ["Safe after a raid (minutes)", ["raid", "immune_minutes"]],
-  ["Max times raided", ["raid", "max_times_raided"]],
+  ["Emas awal", ["start_gold"]],
+  ["Harga Lambung", ["parts", "hull", "price"]],
+  ["Harga Tiang", ["parts", "mast", "price"]],
+  ["Harga Layar", ["parts", "sail", "price"]],
+  ["Harga Peta", ["parts", "map", "price"]],
+  ["Stok awal (tiap bagian)", ["stock_start"]],
+  ["Kapal Pasokan menambah", ["supply_ship_add"]],
+  ["Bayaran: Tukang Kapal", ["job_pay", "shipwright"]],
+  ["Bayaran: Trivia", ["job_pay", "sailmaker"]],
+  ["Bayaran: Kartografer", ["job_pay", "cartographer"]],
+  ["Bayaran: Pondok Pelabuhan", ["job_pay", "inn"]],
+  ["Bayaran: Pandai Besi", ["job_pay", "blacksmith"]],
+  ["Bayaran pekerjaan gagal", ["fail_pay"]],
+  ["Pekerjaan per pos (tiap tim)", ["jobs_per_post"]],
+  ["Timer pekerjaan (detik)", ["job_timer_seconds"]],
+  ["Harga Bendera Bajak Laut", ["items", "flag", "price"]],
+  ["Raid per Bendera", ["items", "flag", "raids"]],
+  ["Harga Pedang", ["items", "sword", "price"]],
+  ["Bonus Pedang", ["items", "sword", "bonus"]],
+  ["Harga Perisai", ["items", "shield", "price"]],
+  ["Raid mencuri", ["raid", "steal"]],
+  ["Aman setelah raid (menit)", ["raid", "immune_minutes"]],
+  ["Maks kali dirampok", ["raid", "max_times_raided"]],
 ];
 
 function getPath(obj: unknown, path: string[]): unknown {
@@ -121,11 +124,21 @@ export function SetupForm({ gameId }: { gameId: string }) {
     setSaving(true);
     const res = await sendAction("update_setup", {
       config: configEditable ? config : undefined,
-      teams: teams.map((t) => ({ id: t.id, name: t.name, color: t.color })),
-      posts: posts.map((p) => ({ id: p.id, name: p.name, staff_name: p.staff_name ?? "" })),
+      teams: teams.map((t) => ({
+        id: t.id,
+        name: t.name,
+        color: t.color,
+        active: t.active !== false,
+      })),
+      posts: posts.map((p) => ({
+        id: p.id,
+        name: p.name,
+        staff_name: p.staff_name ?? "",
+        active: p.active !== false,
+      })),
     });
     setSaving(false);
-    if (res.ok) toast.success("Saved.");
+    if (res.ok) toast.success(copy.setup.save);
     else toast.error(res.message ?? errorMessage(res.error_code, res.args));
     await load();
     return res.ok;
@@ -135,8 +148,18 @@ export function SetupForm({ gameId }: { gameId: string }) {
     setSaving(true);
     const res = await sendAction("update_setup", {
       config: configEditable ? config : undefined,
-      teams: teams.map((t) => ({ id: t.id, name: t.name, color: t.color })),
-      posts: posts.map((p) => ({ id: p.id, name: p.name, staff_name: p.staff_name ?? "" })),
+      teams: teams.map((t) => ({
+        id: t.id,
+        name: t.name,
+        color: t.color,
+        active: t.active !== false,
+      })),
+      posts: posts.map((p) => ({
+        id: p.id,
+        name: p.name,
+        staff_name: p.staff_name ?? "",
+        active: p.active !== false,
+      })),
     });
     setSaving(false);
     if (!res.ok) {
@@ -181,15 +204,21 @@ export function SetupForm({ gameId }: { gameId: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Teams</CardTitle>
+          <CardTitle>{copy.mc.teams}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
+          <p className="text-sm text-muted-foreground">
+            Matikan tim yang tidak dipakai agar tidak masuk skor dan tidak tampil di pos.
+          </p>
           {teams.map((t, i) => (
-            <div key={t.id} className="flex flex-wrap items-center gap-2">
+            <div
+              key={t.id}
+              className={`flex flex-wrap items-center gap-2 ${t.active === false ? "opacity-50" : ""}`}
+            >
               <span className="w-6 text-muted-foreground">{t.slot}</span>
               <Input
                 value={t.name}
-                disabled={!namesEditable}
+                disabled={!namesEditable || t.active === false}
                 onChange={(e) => setTeams(teams.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
                 className="h-11 max-w-48 text-base"
               />
@@ -199,7 +228,7 @@ export function SetupForm({ gameId }: { gameId: string }) {
                     key={c}
                     type="button"
                     aria-label={c}
-                    disabled={!namesEditable}
+                    disabled={!namesEditable || t.active === false}
                     onClick={() => setTeams(teams.map((x, j) => (j === i ? { ...x, color: c } : x)))}
                     className="size-8 rounded-full border-2"
                     style={{
@@ -209,6 +238,16 @@ export function SetupForm({ gameId }: { gameId: string }) {
                   />
                 ))}
               </div>
+              <label className="ml-auto flex items-center gap-2 text-sm font-medium">
+                <Switch
+                  checked={t.active !== false}
+                  disabled={!namesEditable}
+                  onCheckedChange={(on) =>
+                    setTeams(teams.map((x, j) => (j === i ? { ...x, active: on } : x)))
+                  }
+                />
+                {t.active !== false ? copy.mc.inPlay : copy.mc.parked}
+              </label>
             </div>
           ))}
         </CardContent>
@@ -216,32 +255,45 @@ export function SetupForm({ gameId }: { gameId: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Posts</CardTitle>
+          <CardTitle>{copy.mc.stockAndPosts}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
+            Matikan pos yang tidak ada penjaganya agar tim tidak diarahkan ke sana.
+          </p>
           {posts.map((p, i) => (
-            <div key={p.id} className="flex flex-col gap-2">
-              <div className="flex flex-wrap gap-2">
+            <div key={p.id} className={`flex flex-col gap-2 ${p.active === false ? "opacity-50" : ""}`}>
+              <div className="flex flex-wrap items-center gap-2">
                 <Input
                   value={p.name}
-                  disabled={!namesEditable}
+                  disabled={!namesEditable || p.active === false}
                   onChange={(e) => setPosts(posts.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
                   className="h-11 max-w-48 text-base"
                 />
                 <Input
-                  placeholder="Staff name"
+                  placeholder="Nama staf"
                   value={p.staff_name ?? ""}
-                  disabled={!namesEditable}
+                  disabled={!namesEditable || p.active === false}
                   onChange={(e) =>
                     setPosts(posts.map((x, j) => (j === i ? { ...x, staff_name: e.target.value } : x)))
                   }
                   className="h-11 max-w-56 text-base"
                 />
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Switch
+                    checked={p.active !== false}
+                    disabled={!namesEditable}
+                    onCheckedChange={(on) =>
+                      setPosts(posts.map((x, j) => (j === i ? { ...x, active: on } : x)))
+                    }
+                  />
+                  {p.active !== false ? copy.mc.inPlay : copy.mc.parked}
+                </label>
               </div>
               <Input
-                placeholder="Job and pass rule (shown on the post phone)"
+                placeholder="Aturan pekerjaan (tampil di HP pos)"
                 value={config.post_rules?.[p.kind] ?? ""}
-                disabled={!configEditable}
+                disabled={!configEditable || p.active === false}
                 onChange={(e) => updateConfig(setPath(config, ["post_rules", p.kind], e.target.value))}
                 className="h-11"
               />
@@ -253,9 +305,9 @@ export function SetupForm({ gameId }: { gameId: string }) {
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
           <div>
-            <CardTitle>Numbers</CardTitle>
+            <CardTitle>Angka</CardTitle>
             {!configEditable && (
-              <p className="mt-1 text-sm text-muted-foreground">Numbers are locked once the game is Ready.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Angka terkunci setelah permainan Siap.</p>
             )}
           </div>
           <Button

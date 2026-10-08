@@ -23,6 +23,7 @@ type RaidState = {
   doubled: boolean;
   pirate_hour: boolean;
   bounty: boolean;
+  unlock_code?: string | null;
 };
 
 export function RaidSheet({
@@ -31,12 +32,14 @@ export function RaidSheet({
   open,
   onOpenChange,
   onDone,
+  onUnlock,
 }: {
   data: GameData;
   team: Team;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDone: () => void;
+  onUnlock?: () => void;
 }) {
   const now = useNow(1000);
   const [targetId, setTargetId] = useState<string | null>(null);
@@ -101,16 +104,32 @@ export function RaidSheet({
               <div className="mt-1 text-base font-semibold text-amber-700">
                 {copy.raid.extras(raid.doubled, raid.pirate_hour, raid.bounty)}
               </div>
-              <Button className="mt-4 h-14 w-full text-lg" onClick={() => onOpenChange(false)}>
-                {copy.raid.close}
-              </Button>
+              {raid.result === "win" && (
+                <p className="mt-3 text-base font-semibold text-slate-700">{copy.raid.unlockAfterWin}</p>
+              )}
+              {raid.result === "win" && onUnlock ? (
+                <Button
+                  className="mt-4 h-14 w-full text-lg font-bold text-white"
+                  style={{ background: teamColor(team.color).bg }}
+                  onClick={() => {
+                    onOpenChange(false);
+                    onUnlock();
+                  }}
+                >
+                  {copy.raid.unlockTitle}
+                </Button>
+              ) : (
+                <Button className="mt-4 h-14 w-full text-lg" onClick={() => onOpenChange(false)}>
+                  {copy.raid.close}
+                </Button>
+              )}
             </RaidDice>
           ) : !target ? (
             <>
               <p className="text-base">{copy.raid.pickTarget}</p>
               <div className="grid grid-cols-2 gap-3">
                 {data.teams
-                  .filter((t) => t.id !== team.id)
+                  .filter((t) => t.id !== team.id && t.active !== false)
                   .map((t) => {
                     const c = teamColor(t.color);
                     const safeMs = t.immune_until ? Date.parse(t.immune_until) - now : 0;

@@ -40,19 +40,23 @@ export function StockPosts({ data }: { data: GameData }) {
             <TableHeader>
               <TableRow>
                 <TableHead />
-                {data.teams.map((t) => (
-                  <TableHead key={t.id} className="text-center">
-                    <span className="font-semibold" style={{ color: teamColor(t.color).bg }}>
-                      {t.name}
-                    </span>
-                  </TableHead>
-                ))}
+                {data.teams
+                  .filter((t) => t.active !== false)
+                  .map((t) => (
+                    <TableHead key={t.id} className="text-center">
+                      <span className="font-semibold" style={{ color: teamColor(t.color).bg }}>
+                        {t.name}
+                      </span>
+                    </TableHead>
+                  ))}
                 <TableHead>{copy.mc.serving}</TableHead>
                 <TableHead className="text-right">{copy.mc.waiting}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.posts.map((p) => {
+              {data.posts
+                .filter((p) => p.active !== false)
+                .map((p) => {
                 const Icon = POST_ICONS[p.kind];
                 const serving = data.teams.find((t) => t.id === p.serving_team_id);
                 return (
@@ -62,14 +66,19 @@ export function StockPosts({ data }: { data: GameData }) {
                         <Icon className="size-4" /> {p.name}
                       </span>
                     </TableCell>
-                    {data.teams.map((t) => {
-                      const n = jobs(t.id, p.id);
-                      return (
-                        <TableCell key={t.id} className={`text-center tabular-nums ${n >= limit ? "font-bold text-red-600" : ""}`}>
-                          {n}/{limit}
-                        </TableCell>
-                      );
-                    })}
+                    {data.teams
+                      .filter((t) => t.active !== false)
+                      .map((t) => {
+                        const n = jobs(t.id, p.id);
+                        return (
+                          <TableCell
+                            key={t.id}
+                            className={`text-center tabular-nums ${n >= limit ? "font-bold text-red-600" : ""}`}
+                          >
+                            {n}/{limit}
+                          </TableCell>
+                        );
+                      })}
                     <TableCell>{serving?.name ?? "–"}</TableCell>
                     <TableCell className="text-right tabular-nums">{p.waiting_count}</TableCell>
                   </TableRow>

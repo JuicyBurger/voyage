@@ -262,7 +262,7 @@ async function rulesForRaids() {
 
     const win = await act(magpies, "start_raid", { defender_id: MACAQUES, code: realCode });
     check("raid wins", win.ok && win.state?.result === "win" && win.state?.amount === 15, win);
-    const mq = await team(MACAQUES);
+    let mq = await team(MACAQUES);
     mg = await team(MAGPIES);
     check("Macaques 40 -> 25", mq.gold === 25, mq.gold);
     check("Magpies 63 -> 78, 1 win, 2 raids left", mg.gold === 78 && mg.raid_wins === 1 && mg.raids_left === 2, mg);
@@ -271,6 +271,32 @@ async function rulesForRaids() {
     check("Macaques raided once", mq.times_raided === 1);
     const newCode = await codeOf(4);
     check("Macaques' code changed", newCode !== realCode);
+
+    console.log("Raid lock");
+    check("Macaques locked by Magpies", mq.raid_locked_by === MAGPIES, mq);
+    check("Macaques have a 4-digit unlock code", /^\d{4}$/.test(String(mq.raid_unlock_code ?? "")), mq.raid_unlock_code);
+    // Clear immune so we can prove a second raid on a locked team is refused.
+    await db.from("teams").update({ immune_until: null }).eq("id", MACAQUES);
+    const lockedRaid = await act(magpies, "start_raid", { defender_id: MACAQUES, code: newCode });
+    check("cannot raid a locked team", lockedRaid.error_code === "RAID_LOCKED", lockedRaid);
+    await db
+      .from("teams")
+      .update({ immune_until: new Date(Date.now() + 180000).toISOString() })
+      .eq("id", MACAQUES);
+    const lockedJob = await act(postToken("inn"), "record_job", { team_id: MACAQUES, passed: true });
+    check("locked team cannot do a job", lockedJob.error_code === "RAID_LOCKED", lockedJob);
+    const lockedServe = await act(postToken("inn"), "set_serving", { team_id: MACAQUES });
+    check("locked team cannot be served", lockedServe.error_code === "RAID_LOCKED", lockedServe);
+    const lockedBuy = await act(postToken("blacksmith"), "buy_item", { team_id: MACAQUES, item: "sword" });
+    check("locked team cannot buy", lockedBuy.error_code === "RAID_LOCKED", lockedBuy);
+    const badUnlock = await act(magpies, "unlock_raid_victim", { code: "0000" });
+    check("wrong unlock code rejected", badUnlock.error_code === "WRONG_UNLOCK_CODE", badUnlock);
+    const unlock = await act(magpies, "unlock_raid_victim", { code: mq.raid_unlock_code });
+    check("attacker unlocks with OTP", unlock.ok && unlock.state?.team === "Macaques", unlock);
+    mq = await team(MACAQUES);
+    check("Macaques unlocked", mq.raid_locked_by === null && mq.raid_unlock_code === null, mq);
+    const freeJob = await act(postToken("inn"), "record_job", { team_id: MACAQUES, passed: true });
+    check("unlocked team can work again", freeJob.ok, freeJob);
 
     const again = await act(magpies, "start_raid", { defender_id: MACAQUES, code: newCode });
     check("second raid while safe is rejected", again.error_code === "DEFENDER_SAFE", again);
@@ -282,6 +308,7 @@ async function rulesForRaids() {
     const ph = await team(PHEASANTS);
     check("Shield blocks the raid", shielded.state?.result === "blocked", shielded);
     check("Shield is gone, gold unchanged", ph.shield_count === 0 && ph.gold === 15, ph);
+    check("blocked raid does not lock", ph.raid_locked_by === null, ph);
     check("blocked raid uses a raid", (await team(MAGPIES)).raids_left === 1);
     check("Pheasants are safe after the block", Date.parse(ph.immune_until) > Date.now() + 170000);
 
@@ -533,7 +560,8 @@ async function rulesForReviewFixes() {
     const cfg = data!.config as {
       jobs_per_post: number;
       pace_check: Record<string, unknown>;
-      post_rules: { shipwright: string; blacksmith: string };
+      post_rules: { shipwright: string; sailmaker: string; blacksmith: string };
+      job_timer_seconds: number;
     };
     check("new game jobs_per_post is 6", cfg.jobs_per_post === 6, cfg.jobs_per_post);
     check(
@@ -541,10 +569,12 @@ async function rulesForReviewFixes() {
       JSON.stringify(Object.keys(cfg.pace_check).sort()) === JSON.stringify(["20", "25"]),
       Object.keys(cfg.pace_check),
     );
-    check("new game shipwright job starts with Human Boat", cfg.post_rules.shipwright.startsWith("Human Boat"), cfg.post_rules.shipwright);
+    check("new game shipwright job starts with Perahu Manusia", cfg.post_rules.shipwright.startsWith("Perahu Manusia"), cfg.post_rules.shipwright);
+    check("new game sailmaker is Trivia Alkitab", cfg.post_rules.sailmaker.startsWith("Trivia Alkitab"), cfg.post_rules.sailmaker);
+    check("new game job_timer_seconds is 45", cfg.job_timer_seconds === 45, cfg.job_timer_seconds);
     check(
       "new game blacksmith job starts with Count Together",
-      cfg.post_rules.blacksmith.startsWith("Count Together"),
+      cfg.post_rules.blacksmith.startsWith("Hitung Bersama"),
       cfg.post_rules.blacksmith,
     );
 

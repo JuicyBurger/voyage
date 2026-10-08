@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Minus, Plus, Undo2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Minus, Plus, Timer, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { EventBanner } from "@/components/game/event-banner";
 import { GameBar } from "@/components/game/game-bar";
@@ -81,27 +81,29 @@ export function PostScreen({ identity }: { identity: Identity }) {
       <RevealOverlay game={data.game} scores={data.scores} />
 
       <main className="mx-auto flex w-full max-w-xl flex-col gap-4 p-3">
-        <div className="grid grid-cols-5 gap-2">
-          {data.teams.map((t) => {
-            const c = teamColor(t.color);
-            const isSel = t.id === selectedId;
-            return (
-              <button
-                key={t.id}
-                onClick={() => selectTeam(t)}
-                className="flex h-16 items-center justify-center rounded-xl px-1 text-sm leading-tight font-bold break-words transition-transform active:scale-95"
-                style={{
-                  background: c.bg,
-                  color: c.text,
-                  outline: isSel ? "4px solid #0f172a" : "none",
-                  outlineOffset: 2,
-                  opacity: selectedId && !isSel ? 0.55 : 1,
-                }}
-              >
-                {t.name}
-              </button>
-            );
-          })}
+        <div className={`grid gap-2 ${data.teams.filter((t) => t.active !== false).length <= 3 ? "grid-cols-3" : "grid-cols-5"}`}>
+          {data.teams
+            .filter((t) => t.active !== false)
+            .map((t) => {
+              const c = teamColor(t.color);
+              const isSel = t.id === selectedId;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => selectTeam(t)}
+                  className="flex h-16 items-center justify-center rounded-xl px-1 text-sm leading-tight font-bold wrap-break-word transition-transform active:scale-95"
+                  style={{
+                    background: c.bg,
+                    color: c.text,
+                    outline: isSel ? "4px solid #0f172a" : "none",
+                    outlineOffset: 2,
+                    opacity: selectedId && !isSel ? 0.55 : 1,
+                  }}
+                >
+                  {t.name}
+                </button>
+              );
+            })}
         </div>
 
         {selected ? (
@@ -110,7 +112,7 @@ export function PostScreen({ identity }: { identity: Identity }) {
           <p className="py-8 text-center text-xl text-muted-foreground">{copy.post.pickTeam}</p>
         )}
 
-        {lastAction && undoLeft > 0 && (
+        {lastAction && undoLeft > 0 && (selected || serving) && (
           <Button
             variant="outline"
             disabled={busy}
@@ -196,6 +198,21 @@ function SelectedTeam({
   const jobsFull = done >= cfg.jobs_per_post;
   const storm = activeEvent(data.events, "storm", now);
   const open = isPlaying(data.game) && !storm;
+  const locked = !!team.raid_locked_by;
+  const timerSecs = cfg.job_timer_seconds ?? 45;
+
+  const [left, setLeft] = useState<number | null>(null);
+  const endsAt = useRef<number | null>(null);
+  const autoFailed = useRef(false);
+  const teamIdRef = useRef(team.id);
+  const openRef = useRef(open);
+  const lockedRef = useRef(locked);
+  const jobsFullRef = useRef(jobsFull);
+  const busyRef = useRef(busy);
+  openRef.current = open;
+  lockedRef.current = locked;
+  jobsFullRef.current = jobsFull;
+  busyRef.current = busy;
 
   const rush = activeEvent(data.events, "gold_rush", now) ? cfg.events.gold_rush_bonus : 0;
   const passAmount = (cfg.job_pay[postKind as keyof typeof cfg.job_pay] + rush) * (team.double_armed ? 2 : 1);
@@ -203,23 +220,22 @@ function SelectedTeam({
   const forSale: Item[] = [
     ...PARTS.filter((p) => cfg.parts[p].post === postKind),
     ...(postKind === "blacksmith" ? (["flag", "sword", "shield"] as Item[]) : []),
-  ];
+  ].filter((item) => {
+    // Hide already-owned items instead of listing them as disabled.
+    if (PARTS.includes(item as Part) && hasPart(team, item as Part)) return false;
+    if (item === "flag" && team.has_flag) return false;
+    if (item === "sword" && team.has_sword) return false;
+    if (item === "shield" && team.shield_count >= 1) return false;
+    return true;
+  });
 
-  function reasonFor(item: Item): string | null {
-    if (!open) return copy.post.reason.closed;
-    const price = data.prices?.[item] ?? 0;
-    if (PARTS.includes(item as Part)) {
-      if (hasPart(team, item as Part)) return copy.post.reason.owned;
-      if ((data.stock[item as Part] ?? 0) <= 0) return copy.post.reason.noStock;
-    }
-    if (item === "flag" && team.has_flag) return copy.post.reason.owned;
-    if (item === "sword" && team.has_sword) return copy.post.reason.owned;
-    if (item === "shield" && team.shield_count >= 1) return copy.post.reason.shield;
-    if (team.gold < price) return copy.post.reason.gold(price - team.gold);
-    return null;
+  function clearTimer() {
+    endsAt.current = null;
+    setLeft(null);
   }
 
   function job(passed: boolean) {
+    clearTimer();
     void run("record_job", { team_id: team.id, passed }, (s) =>
       toast.success(
         copy.post.toastJob(
@@ -232,6 +248,72 @@ function SelectedTeam({
     );
   }
 
+  // Reset the challenge timer whenever a different team is selected.
+  useEffect(() => {
+    teamIdRef.current = team.id;
+    endsAt.current = null;
+    autoFailed.current = false;
+    setLeft(null);
+  }, [team.id]);
+
+  // Tick the countdown; at 0 without Pass → auto Fail once.
+  useEffect(() => {
+    if (left === null) return;
+    const id = window.setInterval(() => {
+      if (endsAt.current === null) return;
+      const next = Math.max(0, Math.ceil((endsAt.current - Date.now()) / 1000));
+      if (next > 0) {
+        setLeft(next);
+        return;
+      }
+      if (autoFailed.current) return;
+      autoFailed.current = true;
+      endsAt.current = null;
+      setLeft(null);
+      // Only auto-fail if the post is still open (not Storm / paused / ended).
+      if (!openRef.current || lockedRef.current || jobsFullRef.current || busyRef.current) return;
+      const tid = teamIdRef.current;
+      void run("record_job", { team_id: tid, passed: false }, (s) =>
+        toast.success(copy.post.toastJob(team.name, Number(s.amount), Boolean(s.doubled), Boolean(s.gold_rush))),
+      );
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [left === null, team.name, run]);
+
+  // Storm / close / lock: cancel an in-flight challenge timer.
+  useEffect(() => {
+    if (open && !locked && !jobsFull) return;
+    clearTimer();
+    autoFailed.current = false;
+  }, [open, locked, jobsFull]);
+
+  function reasonFor(item: Item): string | null {
+    if (!open) return copy.post.reason.closed;
+    if (locked) return copy.post.reason.raidLocked;
+    const price = data.prices?.[item] ?? 0;
+    if (PARTS.includes(item as Part)) {
+      if (hasPart(team, item as Part)) return copy.post.reason.owned;
+      if ((data.stock[item as Part] ?? 0) <= 0) return copy.post.reason.noStock;
+    }
+    if (item === "flag" && team.has_flag) return copy.post.reason.owned;
+    if (item === "sword" && team.has_sword) return copy.post.reason.owned;
+    if (item === "shield" && team.shield_count >= 1) return copy.post.reason.shield;
+    if (team.gold < price) return copy.post.reason.gold(price - team.gold);
+    return null;
+  }
+
+  function startTimer() {
+    if (busy || jobsFull || !open || locked) return;
+    autoFailed.current = false;
+    endsAt.current = Date.now() + timerSecs * 1000;
+    setLeft(timerSecs);
+  }
+
+  const timing = left !== null && left > 0;
+  const baseDisabled = busy || jobsFull || !open || locked;
+  // Pass/Fail only while the challenge timer is running (timeout → auto Fail).
+  const jobDisabled = baseDisabled || !timing;
+
   return (
     <Card className="border-4" style={{ borderColor: c.bg }}>
       <CardContent className="flex flex-col gap-4">
@@ -241,6 +323,7 @@ function SelectedTeam({
               {team.name}
             </div>
             <div className="text-sm text-muted-foreground">{copy.post.jobsHere(done, cfg.jobs_per_post)}</div>
+            {locked && <div className="mt-1 text-sm font-semibold text-red-700">{copy.post.reason.raidLocked}</div>}
           </div>
           <div className="text-right">
             <div className="text-4xl font-black tabular-nums">{team.gold}</div>
@@ -265,20 +348,37 @@ function SelectedTeam({
           </div>
         )}
 
+        <div className="flex flex-col gap-2">
+          {timing ? (
+            <div className="rounded-xl bg-slate-900 py-3 text-center text-5xl font-black tabular-nums text-white">
+              {left}
+            </div>
+          ) : null}
+          <Button
+            variant="outline"
+            disabled={baseDisabled}
+            onClick={startTimer}
+            className="h-14 text-lg font-bold"
+          >
+            <Timer className="size-5" />
+            {timing ? copy.post.restartTimer(timerSecs) : copy.post.startTimer(timerSecs)}
+          </Button>
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <Button
-            disabled={busy || jobsFull || !open}
+            disabled={jobDisabled}
             onClick={() => job(true)}
             className="h-20 bg-green-600 text-2xl font-black text-white hover:bg-green-700"
           >
-            {copy.post.pass(passAmount)}
+            {jobDisabled && !timing ? copy.post.passReady : copy.post.pass(passAmount)}
           </Button>
           <Button
-            disabled={busy || jobsFull || !open}
+            disabled={jobDisabled}
             onClick={() => job(false)}
             className="h-20 bg-red-600 text-2xl font-black text-white hover:bg-red-700"
           >
-            {copy.post.fail(cfg.fail_pay)}
+            {jobDisabled && !timing ? copy.post.failReady : copy.post.fail(cfg.fail_pay)}
           </Button>
         </div>
 

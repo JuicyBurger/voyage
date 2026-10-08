@@ -1,410 +1,449 @@
-// All player-facing text lives here, so it can be translated later.
+// All player-facing text lives here (Bahasa Indonesia). App name stays Voyage.
 
 import type { Action, WorldEvent } from "./types";
 
 export const copy = {
-  appName: "Voyage Companion",
+  appName: "Voyage",
 
   landing: {
     title: "Ahoy!",
-    body: "Join with a game code, continue a saved login, or host a new game.",
-    join: "Join a game",
-    host: "Host a game",
-    continue: "Go back to my screen",
-    myGames: "On this phone",
-    forget: "Forget",
-    noSaved: "No saved logins on this phone yet.",
+    body: "Gabung dengan kode permainan, lanjutkan login tersimpan, atau buat permainan baru.",
+    join: "Gabung permainan",
+    host: "Buat permainan",
+    continue: "Kembali ke layar saya",
+    myGames: "Di HP ini",
+    forget: "Lupa",
+    noSaved: "Belum ada login tersimpan di HP ini.",
   },
 
   join: {
-    checking: "Checking your card…",
-    badToken: "This QR code does not work. Ask the MC for help.",
-    youAre: "You are:",
-    start: "Start",
-    startHint: "Tap Start. This turns on sound and keeps your screen awake.",
-    title: "Join a game",
-    codeLabel: "Game code",
-    codeHint: "Six letters from your MC or your card.",
-    find: "Find game",
-    pickRole: "Who are you?",
-    pinLabel: "Your PIN",
-    pinHintMc: "Eight characters from your MC card.",
-    pinHint: "Six digits from your card.",
-    enter: "Enter",
-    back: "Back",
+    checking: "Memeriksa kartu…",
+    badToken: "Kode QR ini tidak berlaku. Minta bantuan MC.",
+    youAre: "Kamu adalah:",
+    start: "Mulai",
+    startHint: "Ketuk Mulai. Ini mengaktifkan suara dan menjaga layar tetap menyala.",
+    title: "Gabung permainan",
+    codeLabel: "Kode permainan",
+    codeHint: "Enam huruf dari MC atau kartumu.",
+    find: "Cari permainan",
+    pickRole: "Kamu siapa?",
+    pinLabel: "PIN kamu",
+    pinHintMc: "Delapan karakter dari kartu MC.",
+    pinHint: "Enam digit dari kartumu.",
+    enter: "Masuk",
+    back: "Kembali",
     gameFound: (name: string, code: string) => `${name} · ${code}`,
     mcRole: "MC",
   },
 
   host: {
-    title: "Host a game",
-    nameLabel: "Game name",
+    title: "Buat permainan",
+    nameLabel: "Nama permainan",
     namePlaceholder: "CYUT Freshgrad Night",
-    passwordLabel: "Host password",
-    create: "Create game",
-    saveTitle: "Save these now",
-    saveBody: "Use these to get back in as the MC on any device.",
-    gameCode: "Game code",
-    mcPin: "MC PIN",
-    copy: "Copy",
-    copied: "Copied",
-    savedCheck: "I saved my MC PIN",
-    continue: "Continue to setup",
-    step: "Step 1 of 4",
+    passwordLabel: "Kata sandi host",
+    create: "Buat permainan",
+    saveTitle: "Simpan ini sekarang",
+    saveBody: "Gunakan ini untuk masuk lagi sebagai MC di perangkat apa pun.",
+    gameCode: "Kode permainan",
+    mcPin: "PIN MC",
+    copy: "Salin",
+    copied: "Disalin",
+    savedCheck: "Saya sudah menyimpan PIN MC",
+    continue: "Lanjut ke pengaturan",
+    step: "Langkah 1 dari 4",
   },
 
   setup: {
-    title: "MC setup",
-    step: "Step 2 of 4",
-    continue: "Continue to phones",
-    save: "Save",
-    resetNumbers: "Reset to default",
-    resetNumbersDone: "Numbers set to defaults. Tap Save to keep them.",
-    backPanel: "Back to MC panel",
+    title: "Pengaturan MC",
+    step: "Langkah 2 dari 4",
+    continue: "Lanjut ke HP",
+    save: "Simpan",
+    resetNumbers: "Kembalikan ke bawaan",
+    resetNumbersDone: "Angka dikembalikan ke bawaan. Ketuk Simpan untuk menyimpan.",
+    backPanel: "Kembali ke panel MC",
   },
 
   lobby: {
-    title: "Phones",
-    step: "Step 3 of 4",
-    body: "Print the QR sheet or share the game code. Watch who joins below.",
-    gameCode: "Game code",
-    openQr: "Open QR sheet",
-    backSetup: "Back to setup",
-    start: "Start game",
-    starting: "Starting…",
-    waiting: "Waiting",
-    connected: "Connected",
-    connectedCount: (n: number, total: number) => `${n} of ${total} connected`,
-    startWarn: "Some phones are still waiting. Start the game anyway?",
-    showPins: "Show PINs",
-    hidePins: "Hide PINs",
+    title: "HP",
+    step: "Langkah 3 dari 4",
+    body: "Cetak lembar QR atau bagikan kode permainan. Pantau siapa yang bergabung di bawah.",
+    gameCode: "Kode permainan",
+    openQr: "Buka lembar QR",
+    backSetup: "Kembali ke pengaturan",
+    start: "Mulai permainan",
+    starting: "Memulai…",
+    waiting: "Menunggu",
+    connected: "Terhubung",
+    connectedCount: (n: number, total: number) => `${n} dari ${total} terhubung`,
+    startWarn: "Beberapa HP masih menunggu. Mulai permainan sekarang?",
+    showPins: "Tampilkan PIN",
+    hidePins: "Sembunyikan PIN",
     showQr: "QR",
-    scanHint: "Scan with the phone camera",
-    closeQr: "Close",
+    scanHint: "Pindai dengan kamera HP",
+    closeQr: "Tutup",
   },
 
   codes: {
-    title: "Codes",
-    show: "Show codes",
-    hide: "Hide codes",
-    rotate: "New PIN",
-    rotateWarn: "The printed card for this role will stop working. Continue?",
-    rotated: "New PIN ready. Update the printed card.",
-    expires: (date: string) => `This game is deleted on ${date}.`,
-    rejoin: "Rejoin code",
-    rejoinShow: "Show rejoin code",
-    rejoinHide: "Hide",
+    title: "Kode",
+    show: "Tampilkan kode",
+    hide: "Sembunyikan kode",
+    rotate: "PIN baru",
+    rotateWarn: "Kartu cetak untuk peran ini tidak akan berlaku lagi. Lanjutkan?",
+    rotated: "PIN baru siap. Perbarui kartu cetak.",
+    expires: (date: string) => `Permainan ini dihapus pada ${date}.`,
+    rejoin: "Kode masuk kembali",
+    rejoinShow: "Tampilkan kode masuk kembali",
+    rejoinHide: "Sembunyikan",
     rejoinLine: (code: string, pin: string) => `Game ${code} · PIN ${pin}`,
     cardLine: (code: string, name: string, pin: string) => `Game ${code} · ${name} · PIN ${pin}`,
   },
 
   roles: {
-    mc: "The MC",
-    team: "Team phone",
-    post: "Post phone",
+    mc: "MC",
+    team: "HP tim",
+    post: "HP pos",
   },
 
   common: {
-    youAre: (name: string) => `You are: ${name}`,
-    alsoOpen: "This role is also open on another phone.",
-    noRole: "You are not logged in. Join with a game code or scan your QR.",
-    loading: "Loading…",
-    loginChanged: "Your login was changed by the MC. Ask for the new PIN.",
-    joinAgain: "Join again",
+    youAre: (name: string) => `Kamu adalah: ${name}`,
+    alsoOpen: "Peran ini juga terbuka di HP lain.",
+    noRole: "Kamu belum masuk. Gabung dengan kode permainan atau pindai QR.",
+    loading: "Memuat…",
+    loginChanged: "Login kamu diubah oleh MC. Minta PIN baru.",
+    joinAgain: "Gabung lagi",
   },
 
   status: {
-    setup: "Setting up",
-    ready: "Ready",
-    running: "Playing",
-    paused: "PAUSED",
+    setup: "Persiapan",
+    ready: "Siap",
+    running: "Bermain",
+    paused: "DIJEDA",
     last_call: "Last Call",
-    ended: "Game over",
+    ended: "Permainan selesai",
   },
 
   items: {
-    hull: "Hull",
-    mast: "Mast",
-    sail: "Sail",
-    map: "Map",
-    flag: "Pirate Flag",
-    sword: "Sword",
-    shield: "Shield",
+    hull: "Lambung",
+    mast: "Tiang",
+    sail: "Layar",
+    map: "Peta",
+    flag: "Bendera Bajak Laut",
+    sword: "Pedang",
+    shield: "Perisai",
   } as Record<string, string>,
 
   team: {
-    gold: "Gold",
-    boat: "Your boat",
-    buyAt: (post: string) => `Buy at the ${post}`,
-    owned: "Done",
-    nextStep: "Next step",
-    items: "Items",
-    flag: (left: number) => `Pirate Flag: ${left} raid${left === 1 ? "" : "s"} left`,
-    noFlag: "No Pirate Flag",
-    sword: "Sword: +1 to your dice",
-    noSword: "No Sword",
-    shield: "Shield: blocks the next raid",
-    noShield: "No Shield",
-    doubleTitle: "Double Profit",
-    doubleOff: "Use Double Profit on my next passed job or won raid",
-    doubleOn: "DOUBLE PROFIT ARMED. Tap to turn off.",
-    doubleUsed: "Double Profit is used.",
-    posts: "Posts",
-    jobsLeft: (left: number, total: number) => `Jobs left: ${left}/${total}`,
-    free: "Free",
-    busy: "Busy",
-    servingYou: "Serving you",
-    waiting: (n: number) => `${n} waiting`,
-    challengeTitle: (post: string) => `Challenge at the ${post}`,
-    journey: "Journey log",
-    noJourney: "Your story starts here.",
-    safeFor: (time: string) => `You are safe from raids for ${time}.`,
-    myCode: "My raid code",
-    showCode: "Show code",
-    hideCode: "Hide",
-    codeHint: "If a pirate crew raids you, you must show them this code.",
+    gold: "Emas",
+    boat: "Kapalmu",
+    buyAt: (post: string) => `Beli di ${post}`,
+    owned: "Sudah",
+    nextStep: "Langkah berikutnya",
+    items: "Barang",
+    flag: (left: number) => `Bendera Bajak Laut: sisa ${left} raid`,
+    noFlag: "Belum punya Bendera Bajak Laut",
+    sword: "Pedang: +1 pada dadu",
+    noSword: "Belum punya Pedang",
+    shield: "Perisai: menahan 1 raid berikutnya",
+    noShield: "Belum punya Perisai",
+    doubleTitle: "Untung Ganda",
+    doubleOff: "Pakai Untung Ganda pada pekerjaan lulus atau raid menang berikutnya",
+    doubleOn: "UNTUNG GANDA SIAP. Ketuk untuk mematikan.",
+    doubleUsed: "Untung Ganda sudah dipakai.",
+    posts: "Pos",
+    jobsLeft: (left: number, total: number) => `Sisa pekerjaan: ${left}/${total}`,
+    free: "Kosong",
+    busy: "Sibuk",
+    servingYou: "Melayani kamu",
+    waiting: (n: number) => `${n} menunggu`,
+    challengeTitle: (post: string) => `Tantangan di ${post}`,
+    journey: "Catatan perjalanan",
+    noJourney: "Ceritamu dimulai di sini.",
+    safeFor: (time: string) => `Kamu aman dari raid selama ${time}.`,
+    myCode: "Kode raid saya",
+    showCode: "Tampilkan kode",
+    hideCode: "Sembunyikan",
+    codeHint: "Jika tim bajak laut merampokmu, kamu harus menunjukkan kode ini.",
   },
 
   raid: {
-    button: (left: number) => `Raid! (${left} left)`,
-    title: "Raid a crew",
-    pickTarget: "Which crew do you raid?",
-    safe: (time: string) => `Safe ${time}`,
-    maxed: "Raided too often",
-    typeCode: (team: string) => `Ask ${team} for their raid code and type it in.`,
+    button: (left: number) => `Raid! (sisa ${left})`,
+    title: "Rampok tim",
+    pickTarget: "Tim mana yang kamu rampok?",
+    safe: (time: string) => `Aman ${time}`,
+    maxed: "Terlalu sering dirampok",
+    typeCode: (team: string) => `Minta kode raid ${team} dan ketik di sini.`,
     go: "Raid!",
-    back: "Back",
-    rolling: "Rolling the dice…",
-    you: "You",
-    sword: (bonus: number) => `+${bonus} Sword`,
-    win: (amount: number) => `You won! You took ${amount} gold.`,
-    loss: "You lost the fight. No gold this time.",
-    blocked: (team: string) => `${team} had a Shield. The raid was blocked.`,
-    defWin: (team: string) => `${team} raided you, but you won the fight!`,
-    defLoss: (team: string, amount: number) => `${team} raided you and took ${amount} gold!`,
-    defBlocked: (team: string) => `${team} raided you. Your Shield blocked it!`,
+    back: "Kembali",
+    rolling: "Mengocok dadu…",
+    you: "Kamu",
+    sword: (bonus: number) => `+${bonus} Pedang`,
+    win: (amount: number) => `Menang! Kamu mengambil ${amount} emas.`,
+    loss: "Kamu kalah. Tidak dapat emas.",
+    blocked: (team: string) => `${team} punya Perisai. Raid ditahan.`,
+    defWin: (team: string) => `${team} merampokmu, tapi kamu menang!`,
+    defLoss: (team: string, amount: number) => `${team} merampokmu dan mengambil ${amount} emas!`,
+    defBlocked: (team: string) => `${team} merampokmu. Perisaimu menahannya!`,
     raidedTitle: "RAID!",
     extras: (doubled: boolean, pirateHour: boolean, bounty: boolean) =>
-      [doubled && "Double Profit!", pirateHour && "Pirate Hour!", bounty && "Bounty!"].filter(Boolean).join(" "),
+      [doubled && "Untung Ganda!", pirateHour && "Jam Bajak Laut!", bounty && "Hadiah Buronan!"].filter(Boolean).join(" "),
     close: "OK",
+    lockTitle: "TERKUNCI!",
+    lockBody: (team: string) => `${team} merampokmu. Berikan kode ini kepada mereka.`,
+    lockHint: "Kamu tidak bisa ke pos mana pun sampai mereka melepasmu dengan kode ini.",
+    unlockTitle: "Lepaskan tawanan",
+    unlockHint: "Ketik kode yang ditampilkan di HP tim yang kamu rampok.",
+    unlockGo: "Lepaskan",
+    unlockOk: (team: string) => `${team} sudah dilepas.`,
+    unlockAfterWin: "Mereka terkunci. Minta kode OTP mereka lalu lepaskan di sini.",
   },
 
   post: {
-    pickTeam: "Tap a team",
-    jobsHere: (done: number, total: number) => `Jobs here: ${done}/${total}`,
-    doubleArmed: "DOUBLE PROFIT ARMED",
-    pass: (amount: number) => `Pass (+${amount})`,
-    fail: (amount: number) => `Fail (+${amount})`,
-    sell: "Sell",
-    stock: (n: number) => `${n} left`,
-    buy: (price: number) => `Cost ${price}`,
-    serving: (team: string) => `Serving: ${team}`,
-    notServing: "Serving: nobody",
-    done: "Done",
-    waiting: "Waiting",
-    undo: (what: string, left: string) => `Undo: ${what} (${left})`,
+    pickTeam: "Ketuk sebuah tim",
+    jobsHere: (done: number, total: number) => `Pekerjaan di sini: ${done}/${total}`,
+    doubleArmed: "UNTUNG GANDA SIAP",
+    pass: (amount: number) => `Lulus (+${amount})`,
+    fail: (amount: number) => `Gagal (+${amount})`,
+    passReady: "Lulus",
+    failReady: "Gagal",
+    sell: "Jual",
+    stock: (n: number) => `Sisa ${n}`,
+    buy: (price: number) => `Harga ${price}`,
+    serving: (team: string) => `Melayani: ${team}`,
+    notServing: "Melayani: tidak ada",
+    done: "Selesai",
+    waiting: "Antrian",
+    undo: (what: string, left: string) => `Batalkan: ${what} (${left})`,
+    startTimer: (secs: number) => `Mulai timer (${secs} dtk)`,
+    restartTimer: (secs: number) => `Ulangi timer (${secs} dtk)`,
     toastJob: (team: string, amount: number, doubled: boolean, goldRush?: boolean) => {
-      const extra = [doubled && "Double Profit!", goldRush && "Gold Rush!"].filter(Boolean).join(" ");
-      return `${team} +${amount} gold${extra ? ` (${extra})` : ""}`;
+      const extra = [doubled && "Untung Ganda!", goldRush && "Gold Rush!"].filter(Boolean).join(" ");
+      return `${team} +${amount} emas${extra ? ` (${extra})` : ""}`;
     },
-    toastBuy: (team: string, item: string, price: number) => `${team} bought the ${item} for ${price} gold`,
-    toastUndo: "Undone.",
+    toastBuy: (team: string, item: string, price: number) => `${team} membeli ${item} seharga ${price} emas`,
+    toastUndo: "Dibatalkan.",
     reason: {
-      owned: "Already owned",
-      noStock: "None left",
-      gold: (short: number) => `Short by ${short}`,
-      shield: "Already has one",
-      closed: "Not now",
+      owned: "Sudah punya",
+      noStock: "Stok habis",
+      gold: (short: number) => `Kurang ${short}`,
+      shield: "Sudah punya satu",
+      closed: "Tidak sekarang",
+      raidLocked: "Tim terkunci (raid)",
     },
   },
 
   mc: {
-    ready: "Ready",
-    unready: "Back to setup",
-    start: "Start game",
-    pause: "Pause",
-    resume: "Resume",
+    ready: "Siap",
+    unready: "Kembali ke persiapan",
+    start: "Mulai permainan",
+    pause: "Jeda",
+    resume: "Lanjut",
     lastCall: "Last Call",
-    end: "End game",
-    confirmEnd: "End the game now? Scores will be final.",
-    timeForLastCall: "Time for Last Call!",
-    timeToEnd: "Time to end the game",
-    nextEvent: "Next event",
-    noNextEvent: "No more scheduled events.",
-    atMinute: (m: number) => `at minute ${m}`,
-    dueNow: "Due now",
-    fireNow: "Fire now",
-    fired: "Fired",
-    schedule: "Schedule",
-    autoFire: "Auto-fire scheduled events",
-    events: "Events",
-    fire: "Fire",
+    end: "Akhiri permainan",
+    confirmEnd: "Akhiri permainan sekarang? Skor akan final.",
+    timeForLastCall: "Waktunya Last Call!",
+    timeToEnd: "Waktunya mengakhiri permainan",
+    nextEvent: "Acara berikutnya",
+    noNextEvent: "Tidak ada acara terjadwal lagi.",
+    atMinute: (m: number) => `di menit ${m}`,
+    atClock: (clock: string) => `pada ${clock}`,
+    dueNow: "Saatnya sekarang",
+    scoreHow: "Cara hitung poin",
+    scoreHowBody: (s: {
+      parts_points: number;
+      boat_points: number;
+      finish_points: number;
+      gold_points: number;
+      raid_points: number;
+      most_raids_points: number;
+      total: number;
+    }) =>
+      [
+        `Bagian ${s.parts_points}`,
+        s.boat_points ? `kapal ${s.boat_points}` : null,
+        s.finish_points ? `finis ${s.finish_points}` : null,
+        `emas ${s.gold_points}`,
+        s.raid_points ? `raid ${s.raid_points}` : null,
+        s.most_raids_points ? `raid terbanyak ${s.most_raids_points}` : null,
+        `= ${s.total}`,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    inPlay: "Main",
+    parked: "Tidak main",
+    fireNow: "Picu sekarang",
+    fired: "Sudah dipicu",
+    schedule: "Jadwal",
+    autoFire: "Otomatis picu acara terjadwal",
+    events: "Acara",
+    fire: "Picu",
     stop: "Stop",
-    running: "Running now",
-    messagePlaceholder: "Custom message for every phone",
-    send: "Send",
-    priceDial: "Price dial",
-    dialOff: "Off",
+    running: "Sedang berjalan",
+    messagePlaceholder: "Pesan khusus untuk semua HP",
+    send: "Kirim",
+    priceDial: "Dial harga",
+    dialOff: "Mati",
     dialDown: (p: number) => `−${p}%`,
     dialUp: (p: number) => `+${p}%`,
-    teams: "Teams",
+    teams: "Tim",
     col: {
-      team: "Team",
-      gold: "Gold",
-      parts: "Parts",
-      items: "Items",
-      raids: "Raids left",
-      wins: "Raid wins",
-      raided: "Raided",
-      safe: "Safe",
-      boat: "Boat",
+      team: "Tim",
+      gold: "Emas",
+      parts: "Bagian",
+      items: "Barang",
+      raids: "Sisa raid",
+      wins: "Menang raid",
+      raided: "Dirampok",
+      safe: "Aman",
+      boat: "Kapal",
     },
-    tapToAdjust: "Tap a team to fix a number.",
-    adjustTitle: (team: string) => `Fix ${team}`,
-    adjustGold: "Change gold by",
-    reason: "Reason (required)",
-    reasonPlaceholder: "Why? e.g. post tapped the wrong team",
-    save: "Save",
-    stockAndPosts: "Stock and posts",
-    stock: "Stock",
-    jobs: "Jobs per team",
-    serving: "Serving",
-    waiting: "Waiting",
-    pace: "Pace check",
-    paceParts: (n: number) => `Parts bought so far: ${n}`,
-    paceAt: (minute: string, normal: number) => `At minute ${minute} we expect about ${normal}.`,
-    paceOn: "On pace",
-    paceSlow: "Slow: consider the price dial",
-    paceFast: "Fast: ask posts to use the full 60 seconds",
-    paceWait: "Pace check starts at minute 20.",
-    feed: "Activity feed",
-    noFeed: "Nothing yet.",
-    links: { setup: "Setup", lobby: "Phones", qr: "QR codes", tv: "TV screen" },
-    rehearsal: "Rehearsal",
-    rehearsalHint: "Practice only. The clock runs 4× faster. Turn it on before Start.",
-    postGame: "What's next?",
-    postGameHint: "When you are done with the reveal, close the session or start over.",
-    closeGame: "End game",
-    closeGameHint: "Cleans up this game. Every phone and the TV are forced out.",
-    confirmClose: "End this game for everyone? Phones will be signed out and the game is deleted.",
-    restartGame: "Restart game",
-    restartGameHint: "Cleans up play data and signs out team and post phones, then back to setup.",
-    confirmRestart: "Restart from setup? Team and post phones will be signed out. Your MC login stays.",
+    tapToAdjust: "Ketuk tim untuk memperbaiki angka.",
+    adjustTitle: (team: string) => `Perbaiki ${team}`,
+    adjustGold: "Ubah emas sebesar",
+    reason: "Alasan (wajib)",
+    reasonPlaceholder: "Kenapa? mis. pos menekan tim yang salah",
+    save: "Simpan",
+    stockAndPosts: "Stok dan pos",
+    stock: "Stok",
+    jobs: "Pekerjaan per tim",
+    serving: "Melayani",
+    waiting: "Antrian",
+    pace: "Cek tempo",
+    paceParts: (n: number) => `Bagian terbeli sejauh ini: ${n}`,
+    paceAt: (minute: string, normal: number) => `Di menit ${minute} kita harapkan sekitar ${normal}.`,
+    paceOn: "Sesuai tempo",
+    paceSlow: "Lambat: pertimbangkan dial harga",
+    paceFast: "Cepat: minta pos memakai timer penuh",
+    paceWait: "Cek tempo mulai di menit 20.",
+    feed: "Umpan aktivitas",
+    noFeed: "Belum ada.",
+    links: { setup: "Pengaturan", lobby: "HP", qr: "Kode QR", tv: "Layar TV" },
+    rehearsal: "Latihan",
+    rehearsalHint: "Hanya latihan. Jam berjalan 4× lebih cepat. Nyalakan sebelum Mulai.",
+    postGame: "Selanjutnya?",
+    postGameHint: "Setelah pengumuman selesai, tutup sesi atau mulai ulang.",
+    closeGame: "Tutup permainan",
+    closeGameHint: "Membersihkan permainan ini. Semua HP dan TV akan keluar.",
+    confirmClose: "Tutup permainan untuk semua orang? HP akan keluar dan permainan dihapus.",
+    restartGame: "Mulai ulang",
+    restartGameHint: "Membersihkan data permainan dan mengeluarkan HP tim/pos, lalu kembali ke pengaturan.",
+    confirmRestart: "Mulai ulang dari pengaturan? HP tim dan pos akan keluar. Login MC tetap.",
   },
 
   rehearsal: {
-    badge: "REHEARSAL · the clock is 4× faster",
+    badge: "LATIHAN · jam 4× lebih cepat",
   },
 
   scores: {
-    points: "Points",
-    place: (n: number) => (n === 1 ? "1st" : n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`),
+    points: "Poin",
+    place: (n: number) => (n === 1 ? "ke-1" : n === 2 ? "ke-2" : n === 3 ? "ke-3" : `ke-${n}`),
     breakdown: (s: { parts: number; gold: number; raid_wins: number; boat_rank: number | null }) =>
       [
-        `${s.parts}/4 parts`,
-        s.boat_rank ? `boat #${s.boat_rank}` : null,
-        `${s.gold} gold`,
-        s.raid_wins ? `${s.raid_wins} raid win${s.raid_wins === 1 ? "" : "s"}` : null,
+        `${s.parts}/4 bagian`,
+        s.boat_rank ? `kapal #${s.boat_rank}` : null,
+        `${s.gold} emas`,
+        s.raid_wins ? `${s.raid_wins} menang raid` : null,
       ]
         .filter(Boolean)
         .join(" · "),
   },
 
   reveal: {
-    title: "THE FINAL VOYAGE",
-    waiting: "Who reached the island first?",
-    winner: (team: string) => `${team} win!`,
-    scoresTitle: "Final scores",
-    scoresWaiting: "Waiting for the MC to start the reveal.",
-    mcTitle: "Final reveal",
-    mcHint: "End the game first. Then start the reveal and tap Next for each place, from last to first.",
-    start: "Start the reveal",
-    next: (place: string) => `Reveal ${place} place`,
-    back: "Back",
-    done: "All places are shown.",
-    shown: (n: number, total: number) => `${n} of ${total} places shown`,
-    confirmStart: "Start the reveal? Scores will be frozen and you can no longer fix numbers.",
+    title: "VOYAGE TERAKHIR",
+    waiting: "Siapa yang sampai pulau duluan?",
+    winner: (team: string) => `${team} juara!`,
+    scoresTitle: "Skor akhir",
+    scoresWaiting: "Menunggu MC memulai pengumuman…",
+    mcTitle: "Pengumuman akhir",
+    mcHint: "Akhiri permainan dulu. Lalu mulai pengumuman dan ketuk Berikutnya untuk tiap peringkat, dari terakhir ke juara.",
+    start: "Mulai pengumuman",
+    next: (place: string) => `Umumkan peringkat ${place}`,
+    back: "Kembali",
+    done: "Semua peringkat sudah ditampilkan.",
+    shown: (n: number, total: number) => `${n} dari ${total} peringkat ditampilkan`,
+    confirmStart: "Mulai pengumuman? Skor akan dikunci dan angka tidak bisa diperbaiki lagi.",
   },
 
   tv: {
-    notFound: "No game with this code.",
-    boats: "Boats finished",
-    noBoats: "No boat is finished yet.",
-    feed: "On the seas",
-    scores: "Scores",
-    scoresHidden: "Scores are a secret until the end!",
-    showScores: "Show scores on the TV",
+    notFound: "Tidak ada permainan dengan kode ini.",
+    boats: "Kapal selesai",
+    noBoats: "Belum ada kapal yang selesai.",
+    feed: "Di laut",
+    scores: "Skor",
+    scoresHidden: "Skor rahasia sampai akhir!",
+    showScores: "Tampilkan skor di TV",
   },
 
   events: {
     gold_rush: "Gold Rush",
-    storm: "Storm",
-    supply_ship: "Supply Ship",
-    lighthouse_aid: "Lighthouse Aid",
-    market_sale: "Market Sale",
-    pirate_hour: "Pirate Hour",
-    bounty: "Bounty",
-    message: "Message",
+    storm: "Badai",
+    supply_ship: "Kapal Pasokan",
+    lighthouse_aid: "Bantuan Mercusuar",
+    market_sale: "Obralan Pasar",
+    pirate_hour: "Jam Bajak Laut",
+    bounty: "Hadiah Buronan",
+    message: "Pesan",
     last_call: "Last Call",
   } as Record<string, string>,
 
   storm: {
-    title: "STORM!",
-    body: "Find shelter at a post. Nobody can work, buy or raid.",
-    wait: (time: string) => `Wait ${time}`,
+    title: "BADAI!",
+    body: "Cari perlindungan di pos. Tidak ada yang boleh kerja, beli, atau raid.",
+    wait: (time: string) => `Tunggu ${time}`,
   },
 
   errors: {
-    BAD_TOKEN: () => "This QR code does not work. Ask the MC for help.",
-    NOT_STARTED: () => "The game has not started yet.",
-    PAUSED: () => "The game is paused.",
-    GAME_OVER: () => "The game is over.",
-    STORM: (a) => `Storm! Wait ${clockText(Number(a.seconds_left ?? 0))}.`,
-    LAST_CALL: () => "Last Call. No more raids.",
-    BAD_STATE: () => "You cannot do that right now.",
-    JOB_LIMIT: (a) => `${a.team} already did ${a.limit} jobs here.`,
+    BAD_TOKEN: () => "Kode QR ini tidak berlaku. Minta bantuan MC.",
+    NOT_STARTED: () => "Permainan belum dimulai.",
+    PAUSED: () => "Permainan sedang dijeda.",
+    GAME_OVER: () => "Permainan sudah selesai.",
+    STORM: (a) => `Badai! Tunggu ${clockText(Number(a.seconds_left ?? 0))}.`,
+    LAST_CALL: () => "Last Call. Tidak ada raid lagi.",
+    BAD_STATE: () => "Kamu tidak bisa melakukan itu sekarang.",
+    JOB_LIMIT: (a) => `${a.team} sudah melakukan ${a.limit} pekerjaan di sini.`,
     NO_STOCK: (a) =>
       a.supply_minute
-        ? `No ${itemName(a.item)}s left. The Supply Ship brings more at minute ${a.supply_minute}.`
-        : `No ${itemName(a.item)}s left.`,
-    NOT_ENOUGH_GOLD: (a) => `${a.team} need ${a.need} gold. They have ${a.have}.`,
-    ALREADY_OWNED: (a) => `${a.team} already have the ${itemName(a.item)}.`,
-    HAS_SHIELD: (a) => `${a.team} already hold a Shield.`,
-    WRONG_POST: () => "You do not sell that here.",
-    NOTHING_TO_UNDO: () => "Nothing to undo. Undo works for 2 minutes.",
-    UNDO_NO_GOLD: (a) => `${a.team} already spent that gold. Ask the MC to fix this.`,
-    UNDO_FLAG_USED: (a) => `${a.team} already used a raid. Ask the MC to fix this.`,
-    UNDO_SHIELD_USED: (a) => `${a.team} already used the Shield. Ask the MC to fix this.`,
-    DOUBLE_USED: () => "Double Profit is already used.",
-    OWN_TEAM: () => "You cannot raid your own crew.",
-    NO_RAIDS: () => "You need a Pirate Flag with raids left.",
+        ? `Stok ${itemName(a.item)} habis. Kapal Pasokan membawa lagi di menit ${a.supply_minute}.`
+        : `Stok ${itemName(a.item)} habis.`,
+    NOT_ENOUGH_GOLD: (a) => `${a.team} butuh ${a.need} emas. Mereka punya ${a.have}.`,
+    ALREADY_OWNED: (a) => `${a.team} sudah punya ${itemName(a.item)}.`,
+    HAS_SHIELD: (a) => `${a.team} sudah punya Perisai.`,
+    WRONG_POST: () => "Barang itu tidak dijual di sini.",
+    NOTHING_TO_UNDO: () => "Tidak ada yang bisa dibatalkan. Batalkan berlaku 2 menit.",
+    UNDO_NO_GOLD: (a) => `${a.team} sudah memakai emas itu. Minta MC memperbaiki.`,
+    UNDO_FLAG_USED: (a) => `${a.team} sudah memakai raid. Minta MC memperbaiki.`,
+    UNDO_SHIELD_USED: (a) => `${a.team} sudah memakai Perisai. Minta MC memperbaiki.`,
+    DOUBLE_USED: () => "Untung Ganda sudah dipakai.",
+    OWN_TEAM: () => "Kamu tidak bisa merampok tim sendiri.",
+    NO_RAIDS: () => "Kamu butuh Bendera Bajak Laut dengan sisa raid.",
     WRONG_CODE: (a) =>
-      `Wrong code. ${a.tries_left} ${a.tries_left === 1 ? "try" : "tries"} left before a 30 second wait.`,
-    RAID_BLOCKED: (a) => `Too many wrong codes. Wait ${clockText(Number(a.seconds_left ?? 0))}.`,
-    DEFENDER_SAFE: (a) => `${a.team} are safe for ${clockText(Number(a.seconds_left ?? 0))} more.`,
-    MAX_RAIDED: (a) => `${a.team} were raided too many times. Pick another crew.`,
-    NOTHING_TO_STEAL: (a) => `${a.team} have no gold. Nothing to steal. Your raid was not used.`,
-    ALREADY_FIRED: () => "That event already fired.",
-    NO_SALE_PART: () => "No part can go on sale right now.",
-    NOTHING_TO_STOP: () => "That event is already over.",
-    NEGATIVE_GOLD: (a) => `${a.team} only have ${a.have} gold.`,
-    NEED_REASON: () => "Please write a reason.",
-    REVEAL_LOCKED: () => "The final reveal has started. Scores are locked.",
-    REHEARSAL_LOCKED: () => "Turn rehearsal on or off before the game starts. Reset the game to change it.",
-    NOT_ENDED: () => "End the game first.",
-    BAD_PASSWORD: () => "Wrong password.",
-    GAME_NOT_FOUND: () => "We could not find that game. Check the code with your MC.",
+      `Kode salah. Sisa ${a.tries_left} percobaan sebelum menunggu 30 detik.`,
+    RAID_BLOCKED: (a) => `Terlalu banyak kode salah. Tunggu ${clockText(Number(a.seconds_left ?? 0))}.`,
+    DEFENDER_SAFE: (a) => `${a.team} aman selama ${clockText(Number(a.seconds_left ?? 0))} lagi.`,
+    MAX_RAIDED: (a) => `${a.team} terlalu sering dirampok. Pilih tim lain.`,
+    NOTHING_TO_STEAL: (a) => `${a.team} tidak punya emas. Tidak ada yang dicuri. Raid tidak terpakai.`,
+    RAID_LOCKED: (a) => `${a.team} masih terkunci setelah raid. Minta penyerang melepas mereka.`,
+    WRONG_UNLOCK_CODE: () => "Kode buka kunci salah.",
+    ALREADY_FIRED: () => "Acara itu sudah dipicu.",
+    NO_SALE_PART: () => "Tidak ada bagian yang bisa diobral sekarang.",
+    NOTHING_TO_STOP: () => "Acara itu sudah selesai.",
+    NEGATIVE_GOLD: (a) => `${a.team} hanya punya ${a.have} emas.`,
+    NEED_REASON: () => "Tolong tulis alasan.",
+    REVEAL_LOCKED: () => "Pengumuman akhir sudah dimulai. Skor terkunci.",
+    REHEARSAL_LOCKED: () => "Nyalakan atau matikan latihan sebelum permainan dimulai. Reset untuk mengubahnya.",
+    NOT_ENDED: () => "Akhiri permainan dulu.",
+    BAD_PASSWORD: () => "Kata sandi salah.",
+    GAME_NOT_FOUND: () => "Permainan tidak ditemukan. Cek kodenya dengan MC.",
     WRONG_PIN: (a) =>
-      `That PIN is not right. ${a.tries_left} ${a.tries_left === 1 ? "try" : "tries"} left.`,
-    RATE_LIMITED: (a) => `Too many tries. Wait ${clockText(Number(a.seconds_left ?? 0))}.`,
-    LOGIN_CHANGED: () => "Your login was changed by the MC. Ask for the new PIN.",
-    NOT_ALLOWED: () => "Your phone cannot do this.",
-    BAD_INPUT: () => "Something is wrong with that input.",
-    SETUP_LOCKED: () => "The game has started. Setup is locked.",
-    CONFIG_LOCKED: () => "Numbers are locked after Ready. Go back to setup to change them.",
-    IN_PROGRESS: () => "Still working on it. Try again in a second.",
-    NETWORK: () => "No connection. Try again.",
-    SERVER_ERROR: () => "Something went wrong. Try again.",
+      `PIN salah. Sisa ${a.tries_left} percobaan.`,
+    RATE_LIMITED: (a) => `Terlalu banyak percobaan. Tunggu ${clockText(Number(a.seconds_left ?? 0))}.`,
+    LOGIN_CHANGED: () => "Login kamu diubah oleh MC. Minta PIN baru.",
+    NOT_ALLOWED: () => "HP kamu tidak boleh melakukan ini.",
+    BAD_INPUT: () => "Ada yang salah dengan input itu.",
+    SETUP_LOCKED: () => "Permainan sudah dimulai. Pengaturan terkunci.",
+    CONFIG_LOCKED: () => "Angka terkunci setelah Siap. Kembali ke pengaturan untuk mengubah.",
+    IN_PROGRESS: () => "Masih diproses. Coba lagi sebentar.",
+    NETWORK: () => "Tidak ada koneksi. Coba lagi.",
+    SERVER_ERROR: () => "Ada yang salah. Coba lagi.",
   } as Record<string, (a: Record<string, unknown>) => string>,
 };
 
@@ -430,76 +469,78 @@ function signed(n: number) {
   return n >= 0 ? `+${n}` : `−${Math.abs(n)}`;
 }
 
-// The team's own journey log ("Passed the job at the Sailmaker. +12 gold.").
 export function journeyLine(a: Action): string {
-  const post = String(a.details.post_name ?? "post");
+  const post = String(a.details.post_name ?? "pos");
   switch (a.kind) {
     case "job_pass": {
       let extra = "";
-      if (a.details.doubled) extra += " Double Profit!";
+      if (a.details.doubled) extra += " Untung Ganda!";
       if (a.details.gold_rush) extra += " Gold Rush!";
-      return `Passed the job at the ${post}. +${a.amount} gold.${extra}`;
+      return `Lulus pekerjaan di ${post}. +${a.amount} emas.${extra}`;
     }
     case "job_fail":
-      return `Tried the job at the ${post}. +${a.amount} gold.`;
+      return `Mencoba pekerjaan di ${post}. +${a.amount} emas.`;
     case "buy":
-      return `Bought the ${itemName(a.item)} at the ${post}. −${Math.abs(a.amount)} gold.`;
+      return `Membeli ${itemName(a.item)} di ${post}. −${Math.abs(a.amount)} emas.`;
     case "boat_done":
-      return `Your boat is finished! Place ${a.details.rank}.`;
+      return `Kapalmu selesai! Peringkat ${a.details.rank}.`;
     case "undo":
-      return `The ${post} undid the last action. ${signed(a.amount)} gold.`;
+      return `${post} membatalkan aksi terakhir. ${signed(a.amount)} emas.`;
     case "double_on":
-      return "Double Profit is armed.";
+      return "Untung Ganda siap.";
     case "double_off":
-      return "Double Profit is off.";
+      return "Untung Ganda dimatikan.";
     case "raid": {
       const other = String(a.details.other);
-      if (a.details.result === "win") return `Raided ${other} and won! +${a.amount} gold.${a.details.doubled ? " Double Profit!" : ""}`;
-      if (a.details.result === "blocked") return `Raided ${other}, but their Shield blocked it.`;
-      return `Raided ${other} and lost the fight.`;
+      if (a.details.result === "win") return `Merampok ${other} dan menang! +${a.amount} emas.${a.details.doubled ? " Untung Ganda!" : ""}`;
+      if (a.details.result === "blocked") return `Merampok ${other}, tapi Perisai mereka menahannya.`;
+      return `Merampok ${other} dan kalah.`;
     }
     case "raided": {
       const other = String(a.details.other);
-      if (a.details.result === "win") return `${other} raided you and took ${Math.abs(a.amount)} gold.`;
-      if (a.details.result === "blocked") return `${other} raided you. Your Shield blocked it.`;
-      return `${other} raided you, but you won the fight.`;
+      if (a.details.result === "win") return `${other} merampokmu dan mengambil ${Math.abs(a.amount)} emas.`;
+      if (a.details.result === "blocked") return `${other} merampokmu. Perisaimu menahannya.`;
+      return `${other} merampokmu, tapi kamu menang.`;
     }
+    case "raid_unlock":
+      return "Kamu dilepas dari kunci raid.";
     case "lighthouse":
-      return `Lighthouse Aid! +${a.amount} gold.`;
+      return `Bantuan Mercusuar! +${a.amount} emas.`;
     case "adjust":
       return a.details.field === "gold"
-        ? `The MC changed your gold: ${signed(a.amount)}. (${a.details.reason})`
-        : `The MC fixed your ${fieldName(a.details.field)}. (${a.details.reason})`;
+        ? `MC mengubah emasmu: ${signed(a.amount)}. (${a.details.reason})`
+        : `MC memperbaiki ${fieldName(a.details.field)}. (${a.details.reason})`;
     default:
-      return a.amount ? `${signed(a.amount)} gold.` : a.kind;
+      return a.amount ? `${signed(a.amount)} emas.` : a.kind;
   }
 }
 
-// The public activity feed ("Bears passed the job at the Sailmaker.").
 export function feedLine(a: Action, team: string): string | null {
-  const post = String(a.details.post_name ?? "post");
+  const post = String(a.details.post_name ?? "pos");
   switch (a.kind) {
     case "job_pass":
-      return `${team} passed the job at the ${post}. +${a.amount} gold.`;
+      return `${team} lulus pekerjaan di ${post}. +${a.amount} emas.`;
     case "job_fail":
-      return `${team} tried the job at the ${post}. +${a.amount} gold.`;
+      return `${team} mencoba pekerjaan di ${post}. +${a.amount} emas.`;
     case "buy":
-      return `${team} bought the ${itemName(a.item)}.`;
+      return `${team} membeli ${itemName(a.item)}.`;
     case "boat_done":
-      return `${team} finished their boat! Place ${a.details.rank}.`;
+      return `${team} menyelesaikan kapal! Peringkat ${a.details.rank}.`;
     case "undo":
-      return `The ${post} undid an action for ${team}.`;
+      return `${post} membatalkan aksi untuk ${team}.`;
     case "raid": {
       const other = String(a.details.other);
-      if (a.details.result === "win") return `${team} raided ${other} and took ${a.amount} gold!`;
-      if (a.details.result === "blocked") return `${team} raided ${other}, but a Shield blocked it!`;
-      return `${team} raided ${other} and lost the fight!`;
+      if (a.details.result === "win") return `${team} merampok ${other} dan mengambil ${a.amount} emas!`;
+      if (a.details.result === "blocked") return `${team} merampok ${other}, tapi Perisai menahannya!`;
+      return `${team} merampok ${other} dan kalah!`;
     }
+    case "raid_unlock":
+      return `${a.details.other ?? "?"} melepas ${a.details.team}.`;
     case "lighthouse":
-      return `${team} got Lighthouse Aid. +${a.amount} gold.`;
+      return `${team} mendapat Bantuan Mercusuar. +${a.amount} emas.`;
     case "adjust":
       return a.details.field === "gold"
-        ? `MC: ${team} gold ${signed(a.amount)} (${a.details.reason})`
+        ? `MC: emas ${team} ${signed(a.amount)} (${a.details.reason})`
         : `MC: ${team} ${fieldName(a.details.field)} = ${a.details.value} (${a.details.reason})`;
     default:
       return null;
@@ -507,16 +548,16 @@ export function feedLine(a: Action, team: string): string | null {
 }
 
 const FIELD_NAMES: Record<string, string> = {
-  gold: "gold",
-  raids_left: "raids left",
-  raid_wins: "raid wins",
-  shield_count: "Shield",
-  has_hull: "Hull",
-  has_mast: "Mast",
-  has_sail: "Sail",
-  has_map: "Map",
-  has_flag: "Pirate Flag",
-  has_sword: "Sword",
+  gold: "emas",
+  raids_left: "sisa raid",
+  raid_wins: "menang raid",
+  shield_count: "Perisai",
+  has_hull: "Lambung",
+  has_mast: "Tiang",
+  has_sail: "Layar",
+  has_map: "Peta",
+  has_flag: "Bendera Bajak Laut",
+  has_sword: "Pedang",
 };
 
 export function fieldName(field: unknown): string {
@@ -527,79 +568,77 @@ export function eventName(kind: string): string {
   return copy.events[kind] ?? kind;
 }
 
-// The small line at the top of every screen while a timed event runs.
 export function stripText(e: WorldEvent): string {
   const p = e.payload;
   switch (e.kind) {
     case "gold_rush":
-      return `Gold Rush: +${p.bonus} gold per passed job (Double Profit doubles it)`;
+      return `Gold Rush: +${p.bonus} emas per pekerjaan lulus (Untung Ganda menggandakannya)`;
     case "storm":
-      return "Storm: nobody can work, buy or raid";
+      return "Badai: tidak ada yang boleh kerja, beli, atau raid";
     case "market_sale":
-      return `Market Sale: ${itemName(p.part)} −${p.discount} gold`;
+      return `Obralan Pasar: ${itemName(p.part)} −${p.discount} emas`;
     case "pirate_hour":
-      return `Pirate Hour: won raids steal ×${p.multiplier}`;
+      return `Jam Bajak Laut: raid menang mencuri ×${p.multiplier}`;
     case "bounty":
-      return `Bounty on ${joinNames((p.teams as string[]) ?? [])}: +${p.bonus} gold`;
+      return `Hadiah Buronan pada ${joinNames((p.teams as string[]) ?? [])}: +${p.bonus} emas`;
     default:
       return eventName(e.kind);
   }
 }
 
 export function priceDialText(percent: number) {
-  return percent < 0 ? `Parts ${percent}%` : `Parts +${percent}%`;
+  return percent < 0 ? `Bagian ${percent}%` : `Bagian +${percent}%`;
 }
 
 export type Banner = { title: string; body: string; tone: "good" | "bad" | "info"; big?: boolean };
 
-// Full-screen banner text for a world event. null = no banner.
 export function bannerFor(e: WorldEvent): Banner | null {
   const p = e.payload;
   switch (e.kind) {
     case "boat_finished": {
       const rank = Number(p.rank);
-      const place = rank === 1 ? "First to the island!" : `Place ${rank}.`;
-      const bonus = Number(p.bonus) > 0 ? ` +${p.bonus} points.` : "";
-      return { title: "BOAT FINISHED!", body: `${p.team} have built their boat! ${place}${bonus}`, tone: "good", big: true };
+      const place = rank === 1 ? "Pertama sampai pulau!" : `Peringkat ${rank}.`;
+      const bonus = Number(p.bonus) > 0 ? ` +${p.bonus} poin.` : "";
+      return { title: "KAPAL SELESAI!", body: `${p.team} sudah membangun kapal! ${place}${bonus}`, tone: "good", big: true };
     }
     case "last_call":
       return {
         title: "LAST CALL",
-        body: "No more raids. Posts only serve teams already in line.",
+        body: "Tidak ada raid lagi. Pos hanya melayani tim yang sudah antre.",
         tone: "info",
       };
     case "end":
-      return { title: "LAND HO!", body: "The game is over. Scores are on your phone.", tone: "info" };
+      return { title: "DARATAN!", body: "Permainan selesai. Skor ada di HP-mu.", tone: "info" };
     case "gold_rush":
       return {
         title: "GOLD RUSH!",
-        body: `Passed jobs pay +${p.bonus} gold. Double Profit doubles that bonus. Hurry!`,
+        body: `Pekerjaan lulus mendapat +${p.bonus} emas. Untung Ganda menggandakan bonus itu. Buruan!`,
         tone: "good",
       };
     case "storm":
-      return { title: "STORM!", body: "Find shelter at a post. Nobody can work or raid.", tone: "bad" };
+      return { title: "BADAI!", body: "Cari perlindungan di pos. Tidak ada yang boleh kerja atau raid.", tone: "bad" };
     case "supply_ship":
-      return { title: "SUPPLY SHIP!", body: `The supply ship is in! ${p.add} more of every part.`, tone: "good" };
+      return { title: "KAPAL PASOKAN!", body: `Kapal pasokan datang! +${p.add} setiap bagian.`, tone: "good" };
     case "lighthouse_aid": {
       const names = (p.teams as string[]) ?? [];
-      return { title: "LIGHTHOUSE AID", body: `${joinNames(names)} ${names.length === 1 ? "gets" : "get"} ${p.amount} gold.`, tone: "good" };
+      return { title: "BANTUAN MERCUSUAR", body: `${joinNames(names)} mendapat ${p.amount} emas.`, tone: "good" };
     }
     case "market_sale":
-      return { title: "MARKET SALE!", body: `The ${itemName(p.part)} costs ${p.discount} gold less.`, tone: "good" };
+      return { title: "OBRALAN PASAR!", body: `${itemName(p.part)} lebih murah ${p.discount} emas.`, tone: "good" };
     case "pirate_hour":
-      return { title: "PIRATE HOUR!", body: `Won raids steal ${p.multiplier} times more gold.`, tone: "bad" };
+      return { title: "JAM BAJAK LAUT!", body: `Raid menang mencuri ${p.multiplier}× lebih banyak emas.`, tone: "bad" };
     case "bounty":
       return {
-        title: "BOUNTY!",
-        body: `Win a raid against ${joinNames((p.teams as string[]) ?? [])} for +${p.bonus} gold.`,
+        title: "HADIAH BURONAN!",
+        body: `Menangkan raid terhadap ${joinNames((p.teams as string[]) ?? [])} untuk +${p.bonus} emas.`,
         tone: "bad",
       };
     case "price_dial": {
       const pct = p.percent as number | null;
-      if (pct === null) return { title: "PRICES NORMAL", body: "Part prices are back to normal.", tone: "info" };
+      if (pct === null) return { title: "HARGA NORMAL", body: "Harga bagian kembali normal.", tone: "info" };
       return pct < 0
-        ? { title: "PRICES DOWN!", body: `All parts cost ${-pct}% less.`, tone: "good" }
-        : { title: "PRICES UP!", body: `All parts cost ${pct}% more.`, tone: "bad" };
+        ? { title: "HARGA TURUN!", body: `Semua bagian lebih murah ${-pct}%.`, tone: "good" }
+        : { title: "HARGA NAIK!", body: `Semua bagian lebih mahal ${pct}%.`, tone: "bad" };
     }
     case "message":
       return { title: "AHOY!", body: String(p.text), tone: "info" };
@@ -609,20 +648,20 @@ export function bannerFor(e: WorldEvent): Banner | null {
 }
 
 export const nextStepText = {
-  notStarted: "Wait for the MC to start the game.",
-  paused: "The game is paused. Wait for the MC.",
-  ended: "The game is over. Your place is on this screen.",
+  notStarted: "Tunggu MC memulai permainan.",
+  paused: "Permainan dijeda. Tunggu MC.",
+  ended: "Permainan selesai. Peringkatmu ada di layar ini.",
   boatDone: (goldPerPoint: number) =>
-    `Your boat is done! Keep earning gold. Every ${goldPerPoint} gold is 1 point.`,
-  buy: (post: string, item: string, price: number) => `Go to the ${post} and buy the ${item} (${price} gold).`,
+    `Kapalmu selesai! Terus kumpulkan emas. Setiap ${goldPerPoint} emas = 1 poin.`,
+  buy: (post: string, item: string, price: number) => `Pergi ke ${post} dan beli ${item} (${price} emas).`,
   earn: (need: number, item: string, posts: string[]) =>
     posts.length
-      ? `You need ${need} more gold for the ${item}. ${joinNames(posts)} ${posts.length === 1 ? "has" : "have"} jobs left.`
-      : `You need ${need} more gold for the ${item}. No jobs left. Try a raid or wait for an event.`,
-  noStock: (item: string) => `No ${item}s left right now. Earn gold and wait for the Supply Ship.`,
+      ? `Kamu butuh ${need} emas lagi untuk ${item}. ${joinNames(posts)} masih punya pekerjaan.`
+      : `Kamu butuh ${need} emas lagi untuk ${item}. Tidak ada pekerjaan tersisa. Coba raid atau tunggu acara.`,
+  noStock: (item: string) => `Stok ${item} habis sekarang. Kumpulkan emas dan tunggu Kapal Pasokan.`,
 };
 
 function joinNames(names: string[]) {
   if (names.length <= 1) return names.join("");
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+  return `${names.slice(0, -1).join(", ")} dan ${names[names.length - 1]}`;
 }

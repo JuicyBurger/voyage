@@ -16,6 +16,7 @@ export const configSchema = z.object({
   job_pay: z.object({ shipwright: num, sailmaker: num, cartographer: num, inn: num, blacksmith: num }),
   fail_pay: num,
   jobs_per_post: num.min(1),
+  job_timer_seconds: num.min(5).max(300).default(45),
   items: z.object({
     flag: z.object({ price: num, raids: num }),
     sword: z.object({ price: num, bonus: num }),
@@ -99,7 +100,14 @@ export const inputSchemas = {
   update_setup: z.object({
     config: configSchema.optional(),
     teams: z
-      .array(z.object({ id: uuid, name: z.string().trim().min(1).max(30), color: z.string().max(20) }))
+      .array(
+        z.object({
+          id: uuid,
+          name: z.string().trim().min(1).max(30),
+          color: z.string().max(20),
+          active: z.boolean().default(true),
+        }),
+      )
       .optional(),
     posts: z
       .array(
@@ -107,6 +115,7 @@ export const inputSchemas = {
           id: uuid,
           name: z.string().trim().min(1).max(30),
           staff_name: z.string().trim().max(40),
+          active: z.boolean().default(true),
         }),
       )
       .optional(),
@@ -143,6 +152,7 @@ export const inputSchemas = {
   reveal: z.object({ step: z.enum(["start", "next", "back"]) }),
   get_my_raid_code: z.object({}),
   start_raid: z.object({ defender_id: uuid, code: z.string().regex(/^\d{4}$/) }),
+  unlock_raid_victim: z.object({ code: z.string().regex(/^\d{4}$/) }),
 } as const;
 
 export type ActionType = keyof typeof inputSchemas;

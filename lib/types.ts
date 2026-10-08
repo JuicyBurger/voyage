@@ -15,6 +15,7 @@ export type GameConfig = {
   job_pay: Record<PostKind, number>;
   fail_pay: number;
   jobs_per_post: number;
+  job_timer_seconds: number;
   items: {
     flag: { price: number; raids: number };
     sword: { price: number; bonus: number };
@@ -78,6 +79,7 @@ export type Team = {
   slot: number;
   name: string;
   color: string;
+  active: boolean;
   gold: number;
   has_hull: boolean;
   has_mast: boolean;
@@ -92,6 +94,8 @@ export type Team = {
   raid_wins: number;
   times_raided: number;
   immune_until: string | null;
+  raid_locked_by: string | null;
+  raid_unlock_code: string | null;
   boat_done_at: string | null;
   boat_rank: number | null;
 };
@@ -102,6 +106,7 @@ export type Post = {
   kind: PostKind;
   name: string;
   staff_name: string | null;
+  active: boolean;
   serving_team_id: string | null;
   waiting_count: number;
   updated_at: string;

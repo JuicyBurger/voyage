@@ -85,10 +85,20 @@ export function TeamsTable({ data }: { data: GameData }) {
                   <TableCell className="font-mono tabular-nums">{safeMs > 0 ? formatClock(safeMs + 999) : ""}</TableCell>
                   <TableCell className="font-semibold">{t.boat_rank ? `#${t.boat_rank}` : ""}</TableCell>
                   <TableCell className="text-right">
-                    {score && (
-                      <span className="font-mono text-lg font-bold tabular-nums">
-                        {score.total} <span className="text-xs text-muted-foreground">({copy.scores.place(score.place)})</span>
-                      </span>
+                    {t.active === false ? (
+                      <span className="text-xs text-muted-foreground">{copy.mc.parked}</span>
+                    ) : (
+                      score && (
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className="font-mono text-lg font-bold tabular-nums">
+                            {score.total}{" "}
+                            <span className="text-xs text-muted-foreground">({copy.scores.place(score.place)})</span>
+                          </span>
+                          <span className="max-w-48 text-right text-[10px] leading-tight text-muted-foreground">
+                            {copy.mc.scoreHowBody(score)}
+                          </span>
+                        </div>
+                      )
                     )}
                   </TableCell>
                 </TableRow>

@@ -466,4 +466,16 @@ export const handlers: Record<string, Handler> = {
         p_code: input.code,
       }),
   },
+
+  unlock_raid_victim: {
+    auth: "token",
+    roles: ["team"],
+    run: (ctx, input) =>
+      rpc("unlock_raid_victim", {
+        p_action_id: ctx.actionId,
+        p_game_id: ctx.actor!.game_id,
+        p_attacker_id: ctx.actor!.team_id,
+        p_code: input.code,
+      }),
+  },
 };

@@ -22,7 +22,13 @@ async function run(type: string, input: Record<string, unknown>) {
   return res.ok;
 }
 
-export function EventPanel({ data }: { data: GameData }) {
+function scheduleClock(minute: number) {
+  const m = Math.floor(minute);
+  const s = Math.round((minute - m) * 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+export function EventPanel({ data, onDone }: { data: GameData; onDone?: () => void }) {
   const { game, events } = data;
   const cfg = game.config;
   const now = useNow();
@@ -30,10 +36,17 @@ export function EventPanel({ data }: { data: GameData }) {
   const playing = isPlaying(game);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [autoFire, setAutoFire] = useState(game.auto_fire);
 
+  useEffect(() => {
+    setAutoFire(game.auto_fire);
+  }, [game.auto_fire]);
+
+  // Last Call is "fired" only when we actually entered last_call (or a schedule row fired it).
+  // Do not mark it done just because the game ended from running.
   const isFired = (index: number, kind: string) =>
     events.some((e) => e.schedule_index === index && !e.cancelled_at) ||
-    (kind === "last_call" && (game.status === "last_call" || game.status === "ended"));
+    (kind === "last_call" && game.status === "last_call");
 
   const schedule = cfg.schedule.map((s, index) => ({ ...s, index, fired: isFired(index, s.kind) }));
   const next = schedule.find((s) => !s.fired);
@@ -43,6 +56,7 @@ export function EventPanel({ data }: { data: GameData }) {
     setBusy(true);
     const ok = await run("fire_event", { kind, ...extra });
     setBusy(false);
+    if (ok) onDone?.();
     return ok;
   }
 
@@ -50,7 +64,7 @@ export function EventPanel({ data }: { data: GameData }) {
   // The server refuses a second fire of the same schedule line, so two MC tabs are safe.
   const tried = useRef(new Set<number>());
   useEffect(() => {
-    if (!game.auto_fire || !playing) return;
+    if (!autoFire || !playing) return;
     for (const s of schedule) {
       if (!s.fired && minuteNow >= s.minute && !tried.current.has(s.index)) {
         tried.current.add(s.index);
@@ -82,7 +96,7 @@ export function EventPanel({ data }: { data: GameData }) {
               <div>
                 <div className="text-xl font-bold">{eventName(next.kind)}</div>
                 <div className="text-sm text-muted-foreground">
-                  {due(next) ? copy.mc.dueNow : copy.mc.atMinute(next.minute)}
+                  {due(next) ? copy.mc.dueNow : copy.mc.atClock(scheduleClock(next.minute))}
                 </div>
               </div>
               <Button
@@ -99,7 +113,16 @@ export function EventPanel({ data }: { data: GameData }) {
 
           <div className="flex items-center justify-between gap-3 rounded-lg bg-muted p-3">
             <span className="text-sm font-medium">{copy.mc.autoFire}</span>
-            <Switch checked={game.auto_fire} onCheckedChange={(on) => void run("set_option", { name: "auto_fire", on })} />
+            <Switch
+              checked={autoFire}
+              onCheckedChange={(on) => {
+                setAutoFire(on);
+                void run("set_option", { name: "auto_fire", on }).then((ok) => {
+                  if (!ok) setAutoFire(!on);
+                  else onDone?.();
+                });
+              }}
+            />
           </div>
 
           <div>
@@ -107,7 +130,7 @@ export function EventPanel({ data }: { data: GameData }) {
             <ul className="divide-y text-sm">
               {schedule.map((s) => (
                 <li key={s.index} className="flex items-center gap-3 py-1.5">
-                  <span className="w-8 text-right font-mono tabular-nums">{s.minute}</span>
+                  <span className="w-12 text-right font-mono tabular-nums">{scheduleClock(s.minute)}</span>
                   <span className={`flex-1 ${s.fired ? "text-muted-foreground line-through" : ""}`}>{eventName(s.kind)}</span>
                   {s.fired ? (
                     <Check className="size-4 text-green-600" />
