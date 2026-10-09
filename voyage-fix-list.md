@@ -167,7 +167,7 @@ Goal: cover what trial 3 couldn't reach and confirm the fixes above. Keep the bo
 7. **Timer:** advisory unlock on start still expected (D12).
 8. **Rehearsal mode (Latihan) on:** confirm the clock runs 4× and the events scale. This has never been tested.
 9. **End and reveal:** end mid-game. Run the full "Mulai pengumuman" (Start the reveal), which has never been started in any trial. Check every screen reaches the reveal without a reload, including a post page that's been left open for a long time (T2 Post 1 case).
-10. **Re-check leftovers:** P2-2 OTP flash, P2-8 MC deep-link hang, P2-15 lag.
+10. **Re-check leftovers:** confirm OTP digits stay visible while typing; MC deep links leave Memuat quickly; boat-finished banner arrives within a few seconds; Pass feels snappy after toast.
 
 ---
 
