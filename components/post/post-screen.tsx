@@ -25,7 +25,7 @@ const UNDO_MS = 2 * 60 * 1000;
 
 export function PostScreen({ identity }: { identity: Identity }) {
   const postId = identity.post_id!;
-  const { data, connected, refresh } = useGame(identity.game_id, { column: "actor_post_id", value: postId }, 20);
+  const { data, connected, refreshTables } = useGame(identity.game_id, { column: "actor_post_id", value: postId }, 20);
   // Pending claim only — job/sale controls follow server serving_team_id (P0-3/P0-4).
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -47,7 +47,14 @@ export function PostScreen({ identity }: { identity: Identity }) {
     setBusy(false);
     if (res.ok) onOk?.(res.state ?? {});
     else toast.error(errorMessage(res.error_code, res.args));
-    void refresh();
+    // Light refresh: skip full game/scores/raids sync so Pass feels instant.
+    const tables =
+      type === "buy_item" || type === "undo_last"
+        ? (["teams", "job_counts", "actions", "posts", "stock", "world_events", "prices"] as const)
+        : type === "set_serving" || type === "set_waiting"
+          ? (["posts", "teams"] as const)
+          : (["teams", "job_counts", "actions", "posts"] as const);
+    void refreshTables([...tables]);
   }
 
   function selectTeam(team: Team) {

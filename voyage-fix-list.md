@@ -34,7 +34,7 @@ Bug IDs `B1–B28` refer to the trial 3 report (`voyage-battle/report.md`, §8).
 - ~~"Kamu tidak bisa melakukan itu sekarang" never says why~~ → specific codes `TEAM_BUSY` / `POST_OFF` / `NOT_SERVING` (P1-3).
 - ~~Off teams/roles still appear in the lobby, QR page~~ → filtered; join rejects inactive (P0-2 / P2-6).
 - ~~The Rehearsal switch caption is wrong after the start~~ → fixed (P2-7).
-- **Not re-checked / deferred:** P2-3 (banner latency), P2-8 (MC nav hang), P2-15 (occasional slow result). See §2.
+- ~~Deferred P2 leftovers~~ → P2-2 / P2-3 / P2-8 / P2-15 addressed in follow-up (OTP, faster event poll, MC bootstrap, light post refresh).
 
 ---
 
@@ -82,20 +82,20 @@ Tags: `Regression` = worked in T2 and broke in T3. `Repeat since Tn` = first see
 ### P2: polish and copy
 
 - [x] **P2-1. Mixed languages and unclear labels** (B22) — emas / Indonesian tags / Gold Rush "bonus".
-- [ ] **P2-2. The raid code boxes look empty for a moment after typing** (B13) — still open (InputOTP paint).
-- [ ] **P2-3. The KAPAL SELESAI banner reaches other phones about 13 s late** (B28) — realtime latency; not fixed in app logic.
+- [x] **P2-2. The raid code boxes look empty for a moment after typing** (B13) — pause `useNow` on OTP step; digit filter without `pattern`; narrower slot transition.
+- [x] **P2-3. The KAPAL SELESAI banner reaches other phones about 13 s late** (B28) — heartbeat 5s, dedicated `world_events` poll 2.5s, refresh events on team changes, banner max age 20s.
 - [x] **P2-4. The join page shows stale saved logins** (B26) — home prunes dead tokens on load.
 - [x] **P2-5. "Langkah N dari 4"** (B27) — now "dari 3".
 - [x] **P2-6. Off roles are still listed, and the lobby count is wrong** (B23) — active filter + MC in count.
 - [x] **P2-7. The Rehearsal caption is wrong after the start** (B24).
-- [ ] **P2-8. MC navigation hang on direct /mc/setup|/lobby|/qr** (B25) — still open (investigate RoleGate / whoami).
+- [x] **P2-8. MC navigation hang on direct /mc/setup|/lobby|/qr** (B25) — parallel whoami+pass; QR/lobby card overlay replaces Dialog; pins persist in sessionStorage.
 - [x] **P2-9. Undo bar stays up after Done** (T2 #7) — undo only while serving.
 - [x] **P2-10. Jobs used up** (T2 #8) — "Pekerjaan habis" message.
 - [x] **P2-11. Schedule clarity** (T2 #5) — mm:ss schedule clocks; fire/skip toasts.
 - [x] **P2-12. MC Parts column** (T2 #8) — owned vs missing styling (already present; titles added).
 - [x] **P2-13. Sell vs bought wording** (T2 #8) — post toast: "Dijual: … ke …".
 - [x] **P2-14. "Snow rejoin code" typo** (T1) — Indonesian copy is "Tampilkan kode masuk kembali" (English typo gone).
-- [ ] **P2-15. Occasional slow result** (T2/T3) — infra / network; no code change.
+- [x] **P2-15. Occasional slow result** (T2/T3) — post actions use targeted `refreshTables` instead of full `loadAll`.
 - [x] **P2-16. Selected team stays highlighted while not serving** — highlight = serving only.
 
 ---

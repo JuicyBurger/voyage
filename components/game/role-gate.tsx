@@ -50,25 +50,38 @@ export function RoleGate({ role, children }: { role: Role; children: (identity: 
     let cancelled = false;
 
     async function check(initial: boolean) {
+      if (initial) {
+        const [res, pass] = await Promise.all([
+          sendAction<Identity>("whoami", { device_id: getDeviceId() }, { token }),
+          ensureRolePass(token!),
+        ]);
+        if (cancelled) return;
+        if (!res.ok || !res.state) {
+          setState(failState(token!, res.error_code, res.args));
+          return;
+        }
+        if (!pass.ok) {
+          setState(failState(token!, pass.error_code, pass.args));
+          return;
+        }
+        if (res.state.role !== role) {
+          setState({ kind: "wrong_role", role: res.state.role });
+          return;
+        }
+        setState({ kind: "ok", identity: res.state });
+        return;
+      }
       const res = await sendAction<Identity>("whoami", { device_id: getDeviceId() }, { token });
       if (cancelled) return;
       if (!res.ok || !res.state) {
         // Polls only force-exit on a dead token; other errors keep the session up.
-        if (!initial && res.error_code !== "BAD_TOKEN") return;
+        if (res.error_code !== "BAD_TOKEN") return;
         setState(failState(token!, res.error_code, res.args));
         return;
       }
       if (res.state.role !== role) {
         setState({ kind: "wrong_role", role: res.state.role });
         return;
-      }
-      if (initial) {
-        const pass = await ensureRolePass(token!);
-        if (cancelled) return;
-        if (!pass.ok) {
-          setState(failState(token!, pass.error_code, pass.args));
-          return;
-        }
       }
       setState({ kind: "ok", identity: res.state });
     }

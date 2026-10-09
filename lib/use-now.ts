@@ -7,6 +7,7 @@ import { serverNow } from "./server-time";
 export function useNow(intervalMs = 250) {
   const [now, setNow] = useState(() => serverNow());
   useEffect(() => {
+    if (intervalMs <= 0) return;
     const id = setInterval(() => setNow(serverNow()), intervalMs);
     return () => clearInterval(id);
   }, [intervalMs]);

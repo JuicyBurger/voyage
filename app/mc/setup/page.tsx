@@ -23,19 +23,21 @@ export default function SetupPage() {
       return;
     }
     void (async () => {
-      const res = await sendAction<{ game_id: string; role: string }>("whoami", { device_id: getDeviceId() }, { token });
-      if (!res.ok || res.state?.role !== "mc" || !res.state.game_id) {
-        setError(res.ok ? copy.common.noRole : errorMessage(res.error_code, res.args));
+      const [who, pass] = await Promise.all([
+        sendAction<{ game_id: string; role: string }>("whoami", { device_id: getDeviceId() }, { token }),
+        ensureRolePass(token),
+      ]);
+      if (!who.ok || who.state?.role !== "mc" || !who.state.game_id) {
+        setError(who.ok ? copy.common.noRole : errorMessage(who.error_code, who.args));
         setChecking(false);
         return;
       }
-      const pass = await ensureRolePass(token);
       if (!pass.ok) {
         setError(pass.error_code === "BAD_TOKEN" ? copy.common.loginChanged : errorMessage(pass.error_code, pass.args));
         setChecking(false);
         return;
       }
-      setGameId(res.state.game_id);
+      setGameId(who.state.game_id);
       setChecking(false);
     })();
   }, []);

@@ -41,7 +41,6 @@ export function RaidSheet({
   onDone: () => void;
   onUnlock?: () => void;
 }) {
-  const now = useNow(1000);
   const [targetId, setTargetId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -49,6 +48,8 @@ export function RaidSheet({
   const [raid, setRaid] = useState<RaidState | null>(null);
 
   const target = data.teams.find((t) => t.id === targetId) ?? null;
+  const picking = !raid && !targetId;
+  const now = useNow(picking ? 1000 : 0);
   const maxRaided = data.game.config.raid.max_times_raided;
 
   // Start fresh each time the sheet opens (not on close, so the closing sheet does not flash).
@@ -163,7 +164,14 @@ export function RaidSheet({
             <>
               <p className="text-base">{copy.raid.typeCode(target.name)}</p>
               <div className="flex justify-center">
-                <InputOTP maxLength={4} value={code} onChange={setCode} inputMode="numeric" pattern="^\d*$" autoFocus>
+                <InputOTP
+                  maxLength={4}
+                  value={code}
+                  onChange={(v) => setCode(v.replace(/\D/g, "").slice(0, 4))}
+                  inputMode="numeric"
+                  pushPasswordManagerStrategy="none"
+                  autoFocus
+                >
                   <InputOTPGroup>
                     {[0, 1, 2, 3].map((i) => (
                       <InputOTPSlot key={i} index={i} className="size-16 text-3xl font-bold" />

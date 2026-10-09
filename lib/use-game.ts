@@ -28,8 +28,10 @@ type Table = "games" | "teams" | "posts" | "stock" | "job_counts" | "world_event
 const TABLES: Table[] = ["games", "teams", "posts", "stock", "job_counts", "world_events", "actions", "raids"];
 const POST_ORDER = ["shipwright", "sailmaker", "cartographer", "inn", "blacksmith"];
 
-const HEARTBEAT_MS = 15000;
-const DOWN_POLL_MS = 5000;
+// Keep under EventBanner MAX_AGE_MS so missed realtime events still show via heartbeat.
+const HEARTBEAT_MS = 5000;
+const DOWN_POLL_MS = 3000;
+const EVENTS_POLL_MS = 2500;
 
 // Loads the whole game once, then keeps it fresh with Realtime.
 // Heartbeat resyncs even while "connected" so a zombie channel cannot freeze the UI.
@@ -126,6 +128,14 @@ export function useGame(gameId: string | null, actionsFilter: ActionsFilter = "n
     await Promise.all([...TABLES, "prices" as const, "scores" as const].map((t) => load(t)));
   }, [load]);
 
+  // Targeted refresh after a local action — avoid full loadAll on every Pass/sale.
+  const refreshTables = useCallback(
+    async (tables: (Table | Extra)[]) => {
+      await Promise.all(tables.map((t) => load(t)));
+    },
+    [load],
+  );
+
   const schedule = useCallback(
     (what: Table | Extra) => {
       clearTimeout(timers.current[what]);
@@ -151,6 +161,8 @@ export function useGame(gameId: string | null, actionsFilter: ActionsFilter = "n
           schedule(table);
           if (table === "games" || table === "world_events") schedule("prices");
           if (table === "teams" || table === "games") schedule("scores");
+          // Boat finish updates teams and inserts world_events; catch the banner even if events lag.
+          if (table === "teams") schedule("world_events");
         });
       }
     }
@@ -183,6 +195,8 @@ export function useGame(gameId: string | null, actionsFilter: ActionsFilter = "n
 
     // Always resync on a heartbeat so a "joined" but silent channel cannot freeze gold/status.
     const heartbeat = setInterval(() => void loadAll(), HEARTBEAT_MS);
+    // Events (boat_finished banners) get a faster dedicated poll when realtime misses inserts.
+    const eventsPoll = setInterval(() => schedule("world_events"), EVENTS_POLL_MS);
     const downPoll = setInterval(() => {
       if (channel?.state !== "joined") void loadAll();
     }, DOWN_POLL_MS);
@@ -198,6 +212,7 @@ export function useGame(gameId: string | null, actionsFilter: ActionsFilter = "n
     return () => {
       cancelled = true;
       clearInterval(heartbeat);
+      clearInterval(eventsPoll);
       clearInterval(downPoll);
       clearInterval(resync);
       document.removeEventListener("visibilitychange", onVisible);
@@ -210,5 +225,5 @@ export function useGame(gameId: string | null, actionsFilter: ActionsFilter = "n
       ? (data as GameData)
       : null;
 
-  return { data: ready, connected, refresh: loadAll };
+  return { data: ready, connected, refresh: loadAll, refreshTables };
 }

@@ -80,7 +80,14 @@ export function UnlockSheet({
             </ul>
           )}
           <div className="flex justify-center">
-            <InputOTP maxLength={4} value={code} onChange={setCode} inputMode="numeric" pattern="^\d*$" autoFocus>
+            <InputOTP
+              maxLength={4}
+              value={code}
+              onChange={(v) => setCode(v.replace(/\D/g, "").slice(0, 4))}
+              inputMode="numeric"
+              pushPasswordManagerStrategy="none"
+              autoFocus
+            >
               <InputOTPGroup>
                 {[0, 1, 2, 3].map((i) => (
                   <InputOTPSlot key={i} index={i} className="size-16 text-3xl font-bold" />

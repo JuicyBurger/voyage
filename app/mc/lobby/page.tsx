@@ -10,13 +10,6 @@ import { RehearsalSwitch } from "@/components/mc/rehearsal-switch";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { sendAction } from "@/lib/api";
 import { teamColor } from "@/lib/colors";
 import { copy, errorMessage, itemName } from "@/lib/copy";
@@ -58,6 +51,7 @@ type Row = {
 };
 
 const BASE_KEY = "vc_qr_base";
+const PINS_KEY = "vc_show_pins";
 
 export default function LobbyPage() {
   const router = useRouter();
@@ -68,6 +62,10 @@ export default function LobbyPage() {
   const [busy, setBusy] = useState(false);
   const [qrRow, setQrRow] = useState<Row | null>(null);
   const [joinBase, setJoinBase] = useState("");
+
+  useEffect(() => {
+    setShowPins(sessionStorage.getItem(PINS_KEY) === "1");
+  }, []);
 
   const load = useCallback(async () => {
     const res = await sendAction<LobbyState>("get_codes");
@@ -89,15 +87,16 @@ export default function LobbyPage() {
     }
     let cancelled = false;
     void (async () => {
-      const who = await sendAction<{ game_id: string; role: string }>("whoami", { device_id: getDeviceId() }, { token });
+      const [who, pass] = await Promise.all([
+        sendAction<{ game_id: string; role: string }>("whoami", { device_id: getDeviceId() }, { token }),
+        ensureRolePass(token),
+      ]);
       if (cancelled) return;
       if (!who.ok || who.state?.role !== "mc" || !who.state.game_id) {
         setError(who.ok ? copy.common.noRole : errorMessage(who.error_code, who.args));
         setChecking(false);
         return;
       }
-      const pass = await ensureRolePass(token);
-      if (cancelled) return;
       if (!pass.ok) {
         setError(pass.error_code === "BAD_TOKEN" ? copy.common.loginChanged : errorMessage(pass.error_code, pass.args));
         setChecking(false);
@@ -260,7 +259,17 @@ export default function LobbyPage() {
           <CardTitle className="text-lg">
             {copy.lobby.connectedCount(connectedCount, rows.length)}
           </CardTitle>
-          <Button variant="outline" size="sm" onClick={() => setShowPins((s) => !s)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setShowPins((s) => {
+                const next = !s;
+                sessionStorage.setItem(PINS_KEY, next ? "1" : "0");
+                return next;
+              })
+            }
+          >
             {showPins ? copy.lobby.hidePins : copy.lobby.showPins}
           </Button>
         </CardHeader>
@@ -301,38 +310,25 @@ export default function LobbyPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!qrRow} onOpenChange={(open) => !open && setQrRow(null)}>
-        <DialogContent
-          showCloseButton={false}
-          className="fixed inset-0 top-0 left-0 flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col items-center justify-center gap-6 rounded-none border-0 bg-white p-6 ring-0 sm:max-w-none"
-        >
-          {qrRow && (
-            <>
-              <DialogHeader className="items-center text-center">
-                <DialogTitle
-                  className="text-4xl font-extrabold"
-                  style={qrColor ? { color: qrColor.bg } : undefined}
-                >
-                  {qrRow.label}
-                </DialogTitle>
-                <DialogDescription className="text-base">
-                  {copy.codes.cardLine(data.code, qrRow.label, qrRow.pin)}
-                </DialogDescription>
-              </DialogHeader>
-              <div
-                className="rounded-2xl border-4 p-4"
-                style={{ borderColor: qrColor?.bg ?? "#111" }}
-              >
-                <QRCodeSVG value={qrUrl} size={280} level="M" marginSize={1} />
-              </div>
-              <p className="text-sm text-muted-foreground">{copy.lobby.scanHint}</p>
-              <Button className="h-14 w-full max-w-xs text-lg font-bold" onClick={() => setQrRow(null)}>
-                {copy.lobby.closeQr}
-              </Button>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      {qrRow && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-white p-6 print:hidden">
+          <div className="text-center">
+            <h2 className="text-4xl font-extrabold" style={qrColor ? { color: qrColor.bg } : undefined}>
+              {qrRow.label}
+            </h2>
+            <p className="mt-2 text-base text-muted-foreground">
+              {copy.codes.cardLine(data.code, qrRow.label, qrRow.pin)}
+            </p>
+          </div>
+          <div className="rounded-2xl border-4 p-4" style={{ borderColor: qrColor?.bg ?? "#111" }}>
+            <QRCodeSVG value={qrUrl} size={280} level="M" marginSize={1} />
+          </div>
+          <p className="text-sm text-muted-foreground">{copy.lobby.scanHint}</p>
+          <Button className="h-14 w-full max-w-xs text-lg font-bold" onClick={() => setQrRow(null)}>
+            {copy.lobby.closeQr}
+          </Button>
+        </div>
+      )}
 
       <div className="fixed inset-x-0 bottom-0 border-t bg-background/95 p-4 backdrop-blur">
         <div className="mx-auto flex w-full max-w-lg gap-3">

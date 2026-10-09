@@ -8,7 +8,8 @@ import { playTune, vibrate } from "@/lib/sound";
 import type { WorldEvent } from "@/lib/types";
 
 const SHOW_MS = 3000;
-const MAX_AGE_MS = 15000;
+// Must stay above useGame heartbeat/events poll so late realtime rescues still show.
+const MAX_AGE_MS = 20000;
 
 const TONE_BG: Record<Banner["tone"], string> = {
   good: "#15803d",

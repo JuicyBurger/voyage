@@ -5,19 +5,14 @@ import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Crown } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { sendAction } from "@/lib/api";
 import { teamColor } from "@/lib/colors";
 import { copy, errorMessage } from "@/lib/copy";
 import { POST_ICONS } from "@/lib/post-icons";
+import { ensureRolePass } from "@/lib/read-pass";
+import { getDeviceId, getToken } from "@/lib/role-storage";
 import { POST_KINDS, type PostKind } from "@/lib/types";
 
 type TokenRow = {
@@ -55,10 +50,28 @@ export default function QrPage() {
 
   useEffect(() => {
     setBase(localStorage.getItem(BASE_KEY) ?? window.location.origin);
-    void sendAction<TokensState>("get_codes").then((res) => {
+    const token = getToken();
+    if (!token) {
+      setError(copy.common.noRole);
+      return;
+    }
+    void (async () => {
+      const [who, pass] = await Promise.all([
+        sendAction<{ game_id: string; role: string }>("whoami", { device_id: getDeviceId() }, { token }),
+        ensureRolePass(token),
+      ]);
+      if (!who.ok || who.state?.role !== "mc" || !who.state.game_id) {
+        setError(who.ok ? copy.common.noRole : errorMessage(who.error_code, who.args));
+        return;
+      }
+      if (!pass.ok) {
+        setError(pass.error_code === "BAD_TOKEN" ? copy.common.loginChanged : errorMessage(pass.error_code, pass.args));
+        return;
+      }
+      const res = await sendAction<TokensState>("get_codes");
       if (res.ok && res.state) setData(res.state);
       else setError(errorMessage(res.error_code, res.args));
-    });
+    })();
   }, []);
 
   if (error) return <main className="p-6 text-lg">{error}</main>;
@@ -165,42 +178,35 @@ export default function QrPage() {
         })}
       </div>
 
-      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
-        <DialogContent
-          showCloseButton={false}
-          className="fixed inset-0 top-0 left-0 flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col items-center justify-center gap-5 rounded-none border-0 bg-white p-6 ring-0 print:hidden sm:max-w-none"
-        >
-          {selected && (
-            <>
-              <DialogHeader className="items-center text-center">
-                <div className="mb-1 flex items-center justify-center gap-2">
-                  {SelectedIcon && <SelectedIcon className="size-10" style={{ color: selectedColor?.bg }} />}
-                  <DialogTitle
-                    className="text-4xl font-extrabold"
-                    style={selectedColor ? { color: selectedColor.bg } : undefined}
-                  >
-                    {selected.title}
-                  </DialogTitle>
-                </div>
-                <DialogDescription className="text-lg">{selected.subtitle}</DialogDescription>
-              </DialogHeader>
-              <div
-                className="rounded-2xl border-4 p-4"
-                style={{ borderColor: selectedColor?.bg ?? "#111" }}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-white p-6 print:hidden">
+          <div className="text-center">
+            <div className="mb-1 flex items-center justify-center gap-2">
+              {SelectedIcon && <SelectedIcon className="size-10" style={{ color: selectedColor?.bg }} />}
+              <h2
+                className="text-4xl font-extrabold"
+                style={selectedColor ? { color: selectedColor.bg } : undefined}
               >
-                <QRCodeSVG value={`${cleanBase}/join/${selected.token}`} size={280} level="M" marginSize={1} />
-              </div>
-              <p className="text-center text-xl font-bold leading-tight">
-                {copy.codes.cardLine(data.code, selected.title, selected.pin)}
-              </p>
-              <p className="text-sm text-muted-foreground">{copy.lobby.scanHint}</p>
-              <Button className="h-14 w-full max-w-xs text-lg font-bold" onClick={() => setSelected(null)}>
-                {copy.lobby.closeQr}
-              </Button>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+                {selected.title}
+              </h2>
+            </div>
+            <p className="text-lg text-muted-foreground">{selected.subtitle}</p>
+          </div>
+          <div
+            className="rounded-2xl border-4 p-4"
+            style={{ borderColor: selectedColor?.bg ?? "#111" }}
+          >
+            <QRCodeSVG value={`${cleanBase}/join/${selected.token}`} size={280} level="M" marginSize={1} />
+          </div>
+          <p className="text-center text-xl font-bold leading-tight">
+            {copy.codes.cardLine(data.code, selected.title, selected.pin)}
+          </p>
+          <p className="text-sm text-muted-foreground">{copy.lobby.scanHint}</p>
+          <Button className="h-14 w-full max-w-xs text-lg font-bold" onClick={() => setSelected(null)}>
+            {copy.lobby.closeQr}
+          </Button>
+        </div>
+      )}
     </main>
   );
 }
