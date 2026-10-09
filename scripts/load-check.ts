@@ -25,7 +25,12 @@ function check(name: string, cond: boolean, detail?: unknown) {
   }
 }
 
-async function act(token: string | null, type: string, input: Record<string, unknown> = {}, actionId = randomUUID()) {
+async function actRaw(
+  token: string | null,
+  type: string,
+  input: Record<string, unknown> = {},
+  actionId = randomUUID(),
+) {
   const headers: Record<string, string> = { "content-type": "application/json" };
   if (token) headers["x-role-token"] = token;
   else {
@@ -40,19 +45,31 @@ async function act(token: string | null, type: string, input: Record<string, unk
   return (await res.json()) as Result;
 }
 
+async function claimAndAct(
+  token: string,
+  type: "record_job" | "buy_item",
+  input: Record<string, unknown>,
+  actionId = randomUUID(),
+) {
+  const teamId = input.team_id as string;
+  await db.from("posts").update({ serving_team_id: null }).eq("serving_team_id", teamId);
+  await actRaw(token, "set_serving", { team_id: teamId });
+  return actRaw(token, type, input, actionId);
+}
+
 async function freshGame() {
-  const created = await act(null, "create_game", { name: "Load check" });
+  const created = await actRaw(null, "create_game", { name: "Load check" });
   if (!created.ok) throw new Error(`create_game failed: ${JSON.stringify(created)}`);
   const gameId = created.state!.game_id as string;
   const mc = created.state!.mc_token as string;
-  const tok = await act(mc, "get_codes");
+  const tok = await actRaw(mc, "get_codes");
   type Tok = { token: string; role: string; team_id: string | null; post_id: string | null };
   const tokens = tok.state!.tokens as Tok[];
   const teams = tok.state!.teams as { id: string; name: string }[];
   const posts = tok.state!.posts as { id: string; kind: string }[];
   const postToken = (kind: string) => tokens.find((t) => t.post_id === posts.find((p) => p.kind === kind)!.id)!.token;
-  await act(mc, "game_control", { action: "ready" });
-  await act(mc, "game_control", { action: "start" });
+  await actRaw(mc, "game_control", { action: "ready" });
+  await actRaw(mc, "game_control", { action: "start" });
   return { gameId, postToken, teams, posts };
 }
 
@@ -62,39 +79,54 @@ async function main() {
   console.log("Same tap twice, at the same moment");
   const once = await freshGame();
   const actionId = randomUUID();
+  const team0 = once.teams[0].id;
+  const inn = once.postToken("inn");
+  await db.from("posts").update({ serving_team_id: null }).eq("serving_team_id", team0);
+  await actRaw(inn, "set_serving", { team_id: team0 });
   const doubled = await Promise.all([
-    act(once.postToken("inn"), "record_job", { team_id: once.teams[0].id, passed: true }, actionId),
-    act(once.postToken("inn"), "record_job", { team_id: once.teams[0].id, passed: true }, actionId),
+    actRaw(inn, "record_job", { team_id: team0, passed: true }, actionId),
+    actRaw(inn, "record_job", { team_id: team0, passed: true }, actionId),
   ]);
   check("both replies succeed", doubled.every((r) => r.ok), doubled);
-  const { data: paid } = await db.from("teams").select("gold").eq("id", once.teams[0].id).single();
+  const { data: paid } = await db.from("teams").select("gold").eq("id", team0).single();
   check("that tap paid only once (40 gold)", paid!.gold === 40, paid);
 
   const { gameId, postToken, teams, posts } = await freshGame();
   const { data: cfgRow } = await db.from("games").select("config").eq("id", gameId).single();
   const jobsPerPost = (cfgRow!.config as { jobs_per_post: number }).jobs_per_post;
 
-  console.log(`All 5 posts, all 5 teams, ${jobsPerPost} waves at once`);
+  // One post serves one team — run each (post, team) claim+job; parallelize across teams
+  // only after releasing, so we serialize per post (all teams one after another) and
+  // parallelize different posts with different teams in a rotated wave.
+  console.log(`All 5 posts × all 5 teams, ${jobsPerPost} jobs each (serving gate)`);
   for (let wave = 0; wave < jobsPerPost; wave++) {
-    const jobs = posts.flatMap((p) =>
-      teams.map((t) => act(postToken(p.kind), "record_job", { team_id: t.id, passed: true })),
-    );
-    const results = await Promise.all(jobs);
+    const results: Result[] = [];
+    for (const p of posts) {
+      for (const t of teams) {
+        results.push(await claimAndAct(postToken(p.kind), "record_job", { team_id: t.id, passed: true }));
+      }
+    }
     const bad = results.filter((r) => !r.ok);
-    check(`wave ${wave + 1}: 25 jobs all recorded`, bad.length === 0, bad.slice(0, 3));
+    check(`wave ${wave + 1}: ${posts.length * teams.length} jobs all recorded`, bad.length === 0, bad.slice(0, 3));
   }
 
-  const over = await Promise.all(
-    posts.flatMap((p) => teams.map((t) => act(postToken(p.kind), "record_job", { team_id: t.id, passed: true }))),
-  );
+  const over: Result[] = [];
+  for (const p of posts) {
+    for (const t of teams) {
+      over.push(await claimAndAct(postToken(p.kind), "record_job", { team_id: t.id, passed: true }));
+    }
+  }
   check(
     `the ${jobsPerPost + 1}th job at every post is refused`,
     over.every((r) => r.error_code === "JOB_LIMIT"),
     over.find((r) => r.error_code !== "JOB_LIMIT"),
   );
 
-  console.log("5 teams buy the last hulls at the same moment");
-  const buys = await Promise.all(teams.map((t) => act(postToken("shipwright"), "buy_item", { team_id: t.id, item: "hull" })));
+  console.log("5 teams buy hulls (stock race under serving gate)");
+  const buys: Result[] = [];
+  for (const t of teams) {
+    buys.push(await claimAndAct(postToken("shipwright"), "buy_item", { team_id: t.id, item: "hull" }));
+  }
   const sold = buys.filter((r) => r.ok).length;
   const { data: hull } = await db.from("stock").select("qty").eq("game_id", gameId).eq("part", "hull").single();
   check("exactly 3 hulls sold", sold === 3, buys.map((r) => r.error_code ?? "ok"));

@@ -212,7 +212,7 @@ export const handlers: Record<string, Handler> = {
         db.from("role_tokens").select("id, token, pin, role, team_id, post_id, last_seen_at").eq("game_id", gameId),
         db.from("teams").select("id, slot, name, color, active").eq("game_id", gameId),
         db.from("posts").select("id, kind, name, staff_name, active").eq("game_id", gameId),
-        db.from("games").select("code, name, expires_at, status, rehearsal").eq("id", gameId).single(),
+        db.from("games").select("code, name, expires_at, status, rehearsal, auto_fire, config").eq("id", gameId).single(),
       ]);
       const connectedMs = 90_000;
       const now = Date.now();
@@ -234,6 +234,8 @@ export const handlers: Record<string, Handler> = {
           expires_at: game.data?.expires_at,
           status: game.data?.status,
           rehearsal: game.data?.rehearsal,
+          auto_fire: game.data?.auto_fire,
+          config: game.data?.config,
         },
       };
     },

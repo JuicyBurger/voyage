@@ -104,6 +104,11 @@ export function RaidSheet({
               <div className="mt-1 text-base font-semibold text-amber-700">
                 {copy.raid.extras(raid.doubled, raid.pirate_hour, raid.bounty)}
               </div>
+              {raid.result !== "win" && data.game.config.raid.immune_minutes > 0 && (
+                <p className="mt-2 text-base font-semibold text-slate-700">
+                  {copy.raid.safeAfter(data.game.config.raid.immune_minutes)}
+                </p>
+              )}
               {raid.result === "win" && (
                 <p className="mt-3 text-base font-semibold text-slate-700">{copy.raid.unlockAfterWin}</p>
               )}

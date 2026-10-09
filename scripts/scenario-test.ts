@@ -37,6 +37,27 @@ async function act(
   extra: Record<string, string> = {},
   actionId?: string,
 ) {
+  // Jobs/sales require the post to be serving the team (P0-3).
+  // Clear any prior claim so the test can move a team between posts without Selesai.
+  if (
+    token &&
+    (type === "record_job" || type === "buy_item") &&
+    typeof input.team_id === "string"
+  ) {
+    await db.from("posts").update({ serving_team_id: null }).eq("serving_team_id", input.team_id);
+    const serve = await actRaw(token, "set_serving", { team_id: input.team_id }, extra);
+    if (!serve.ok) return serve;
+  }
+  return actRaw(token, type, input, extra, actionId);
+}
+
+async function actRaw(
+  token: string | null,
+  type: string,
+  input: Record<string, unknown> = {},
+  extra: Record<string, string> = {},
+  actionId?: string,
+) {
   const headers: Record<string, string> = { "content-type": "application/json", ...extra };
   if (token) headers["x-role-token"] = token;
   const res = await fetch(`${BASE}/api/action`, {
@@ -399,7 +420,12 @@ async function rulesForEvents() {
 
   console.log("Supply Ship, Lighthouse Aid");
   await fire("supply_ship");
-  check("Supply Ship: Hull stock 3 -> 5", (await stock(gameId, "hull")) === 5);
+  check("Supply Ship: stock capped at stock_start (3)", (await stock(gameId, "hull")) === 3);
+  await act(postToken("shipwright"), "buy_item", { team_id: BEARS, item: "mast" }); // stock mast 2
+  check("after Mast sale: stock 2", (await stock(gameId, "mast")) === 2);
+  const resupply = await fire("supply_ship");
+  check("Supply Ship restocks toward cap", (await stock(gameId, "mast")) === 3, resupply);
+  check("Supply Ship payload includes capped_at", resupply.state?.capped_at === 3, resupply);
   await act(postToken("blacksmith"), "buy_item", { team_id: MAGPIES, item: "flag" }); // Magpies 15
   const aid = await fire("lighthouse_aid");
   check("Lighthouse Aid goes to the poorest team", (await team(MAGPIES)).gold === 30 && (await team(PANGOLINS)).gold === 30, aid);
@@ -728,6 +754,12 @@ async function rulesForHostsAndCodes() {
     );
     const pin = String(created.state?.mc_pin ?? "");
     check("MC PIN is 8 chars from the safe alphabet", /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/.test(pin), pin);
+    const { data: createdGame } = await db
+      .from("games")
+      .select("auto_fire")
+      .eq("id", created.state!.game_id as string)
+      .single();
+    check("new games have auto_fire on", createdGame?.auto_fire === true, createdGame);
   }
 
   console.log("Two games stay separate");

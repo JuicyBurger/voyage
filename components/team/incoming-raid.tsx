@@ -9,11 +9,23 @@ import { serverNow } from "@/lib/server-time";
 import type { Raid, Team } from "@/lib/types";
 
 const MAX_AGE_MS = 15000;
+const AUTO_DISMISS_MS = 8000;
 
 // When another crew raids this team, show the same dice on the defender's phone.
-export function IncomingRaid({ raids, teams, me }: { raids: Raid[]; teams: Team[]; me: Team }) {
+export function IncomingRaid({
+  raids,
+  teams,
+  me,
+  immuneMinutes,
+}: {
+  raids: Raid[];
+  teams: Team[];
+  me: Team;
+  immuneMinutes?: number;
+}) {
   const seen = useRef<Set<string> | null>(null);
   const [raid, setRaid] = useState<Raid | null>(null);
+  const [queue, setQueue] = useState<Raid[]>([]);
 
   useEffect(() => {
     if (seen.current === null) {
@@ -21,12 +33,25 @@ export function IncomingRaid({ raids, teams, me }: { raids: Raid[]; teams: Team[
       return;
     }
     const recent = serverNow() - MAX_AGE_MS;
-    const fresh = raids.find(
-      (r) => r.defender_id === me.id && !seen.current!.has(r.id) && Date.parse(r.created_at) > recent,
-    );
+    const fresh = raids
+      .filter((r) => r.defender_id === me.id && !seen.current!.has(r.id) && Date.parse(r.created_at) > recent)
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
     for (const r of raids) seen.current.add(r.id);
-    if (fresh) setRaid(fresh);
+    if (fresh.length) setQueue((q) => [...q, ...fresh]);
   }, [raids, me.id]);
+
+  useEffect(() => {
+    if (raid || !queue.length) return;
+    setRaid(queue[0]);
+    setQueue((q) => q.slice(1));
+  }, [raid, queue]);
+
+  // Auto-dismiss so a stuck result cannot block the phone over event banners.
+  useEffect(() => {
+    if (!raid) return;
+    const id = window.setTimeout(() => setRaid(null), AUTO_DISMISS_MS);
+    return () => window.clearTimeout(id);
+  }, [raid]);
 
   if (!raid) return null;
   const attacker = teams.find((t) => t.id === raid.attacker_id);
@@ -50,6 +75,9 @@ export function IncomingRaid({ raids, teams, me }: { raids: Raid[]; teams: Team[
                 ? copy.raid.defBlocked(name)
                 : copy.raid.defWin(name)}
           </div>
+          {immuneMinutes != null && immuneMinutes > 0 && (
+            <p className="mt-2 text-base font-semibold text-slate-700">{copy.raid.safeAfter(immuneMinutes)}</p>
+          )}
           <Button className="mt-4 h-14 w-full text-lg" onClick={() => setRaid(null)}>
             {copy.raid.close}
           </Button>

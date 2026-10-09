@@ -19,10 +19,10 @@ import {
 } from "@/components/ui/dialog";
 import { sendAction } from "@/lib/api";
 import { teamColor } from "@/lib/colors";
-import { copy, errorMessage } from "@/lib/copy";
+import { copy, errorMessage, itemName } from "@/lib/copy";
 import { ensureRolePass } from "@/lib/read-pass";
 import { getDeviceId, getToken } from "@/lib/role-storage";
-import type { Game, PostKind } from "@/lib/types";
+import { PARTS, type Game, type GameConfig, type PostKind } from "@/lib/types";
 
 type TokenRow = {
   id: string;
@@ -43,6 +43,8 @@ type LobbyState = {
   name: string;
   status: Game["status"];
   rehearsal: boolean;
+  auto_fire: boolean;
+  config: GameConfig;
 };
 
 type Row = {
@@ -174,6 +176,18 @@ export default function LobbyPage() {
 
   async function startGame() {
     if (!data) return;
+    if (data.config?.parts) {
+      const inactiveSellers = PARTS.filter((part) => {
+        const kind = data.config.parts[part].post;
+        const post = data.posts.find((x) => x.kind === kind);
+        return post?.active === false;
+      });
+      if (inactiveSellers.length) {
+        toast.error(copy.setup.noSellerWarn(inactiveSellers.map(itemName).join(", ")));
+        return;
+      }
+    }
+    if (data.auto_fire === false && !confirm(copy.lobby.autoFireOffWarn)) return;
     const waiting = phones.filter((r) => !r.connected);
     if (waiting.length > 0 && !confirm(copy.lobby.startWarn)) return;
     setBusy(true);

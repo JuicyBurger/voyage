@@ -26,7 +26,8 @@ const UNDO_MS = 2 * 60 * 1000;
 export function PostScreen({ identity }: { identity: Identity }) {
   const postId = identity.post_id!;
   const { data, connected, refresh } = useGame(identity.game_id, { column: "actor_post_id", value: postId }, 20);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Pending claim only — job/sale controls follow server serving_team_id (P0-3/P0-4).
+  const [pendingId, setPendingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const now = useNow();
 
@@ -34,11 +35,13 @@ export function PostScreen({ identity }: { identity: Identity }) {
 
   const post = data.posts.find((p) => p.id === postId)!;
   const Icon = POST_ICONS[post.kind];
-  const selected = data.teams.find((t) => t.id === selectedId) ?? null;
   const serving = data.teams.find((t) => t.id === post.serving_team_id) ?? null;
 
   async function run(type: string, input: Record<string, unknown>, onOk?: (state: Record<string, unknown>) => void) {
-    if (busy) return;
+    if (busy) {
+      toast.message(copy.post.waitBusy);
+      return;
+    }
     setBusy(true);
     const res = await sendAction(type, input);
     setBusy(false);
@@ -48,12 +51,13 @@ export function PostScreen({ identity }: { identity: Identity }) {
   }
 
   function selectTeam(team: Team) {
-    setSelectedId(team.id);
-    if (post.serving_team_id !== team.id) void run("set_serving", { team_id: team.id });
+    if (post.serving_team_id === team.id) return;
+    setPendingId(team.id);
+    void run("set_serving", { team_id: team.id }).finally(() => setPendingId(null));
   }
 
   function clearServing() {
-    void run("set_serving", { team_id: null }, () => setSelectedId(null));
+    void run("set_serving", { team_id: null }, () => toast.success(copy.post.toastDone));
   }
 
   // This post's last job or sale that can still be undone.
@@ -86,7 +90,8 @@ export function PostScreen({ identity }: { identity: Identity }) {
             .filter((t) => t.active !== false)
             .map((t) => {
               const c = teamColor(t.color);
-              const isSel = t.id === selectedId;
+              const isServing = t.id === post.serving_team_id;
+              const isPending = t.id === pendingId;
               return (
                 <button
                   key={t.id}
@@ -95,9 +100,9 @@ export function PostScreen({ identity }: { identity: Identity }) {
                   style={{
                     background: c.bg,
                     color: c.text,
-                    outline: isSel ? "4px solid #0f172a" : "none",
+                    outline: isServing ? "4px solid #0f172a" : isPending ? "3px solid #64748b" : "none",
                     outlineOffset: 2,
-                    opacity: selectedId && !isSel ? 0.55 : 1,
+                    opacity: (post.serving_team_id || pendingId) && !isServing && !isPending ? 0.55 : 1,
                   }}
                 >
                   {t.name}
@@ -106,13 +111,13 @@ export function PostScreen({ identity }: { identity: Identity }) {
             })}
         </div>
 
-        {selected ? (
-          <SelectedTeam data={data} team={selected} postKind={post.kind} postId={postId} busy={busy} run={run} now={now} />
+        {serving ? (
+          <SelectedTeam data={data} team={serving} postKind={post.kind} postId={postId} busy={busy} run={run} now={now} />
         ) : (
           <p className="py-8 text-center text-xl text-muted-foreground">{copy.post.pickTeam}</p>
         )}
 
-        {lastAction && undoLeft > 0 && (selected || serving) && (
+        {lastAction && undoLeft > 0 && serving && (
           <Button
             variant="outline"
             disabled={busy}

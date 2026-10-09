@@ -8,7 +8,14 @@ import type { GameData } from "@/lib/use-game";
 
 // The latest actions from every post and team.
 export function ActivityFeed({ data }: { data: GameData }) {
+  // Global events are logged once per team for travel logs; show one feed line per fire.
+  const seenEvents = new Set<string>();
   const lines = data.actions.flatMap((a) => {
+    if (a.kind === "event") {
+      const key = `${a.details.event}:${a.details.minute_ms ?? a.created_at}`;
+      if (seenEvents.has(key)) return [];
+      seenEvents.add(key);
+    }
     const team = data.teams.find((t) => t.id === a.team_id);
     const text = feedLine(a, team?.name ?? "?");
     return text ? [{ a, team, text }] : [];

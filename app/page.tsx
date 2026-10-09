@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { Ship } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { sendAction } from "@/lib/api";
@@ -16,6 +16,24 @@ export default function Home() {
   const router = useRouter();
   const games = useSyncExternalStore(subscribeMyGames, listMyGames, () => EMPTY_GAMES);
   const token = useSyncExternalStore(subscribeMyGames, getToken, () => null);
+
+  // Drop saved logins whose tokens no longer work (ended / rotated games).
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      for (const g of listMyGames()) {
+        const res = await sendAction("whoami", { device_id: getDeviceId() }, { token: g.token });
+        if (cancelled) return;
+        if (!res.ok) {
+          forgetGame(g.token);
+          if (getToken() === g.token) clearToken();
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const continueSaved = useCallback(
     async (g: MyGame) => {

@@ -19,7 +19,7 @@ const TIMED = ["gold_rush", "storm", "market_sale", "pirate_hour", "bounty"];
 async function run(type: string, input: Record<string, unknown>) {
   const res = await sendAction(type, input);
   if (!res.ok) toast.error(errorMessage(res.error_code, res.args));
-  return res.ok;
+  return res;
 }
 
 function scheduleClock(minute: number) {
@@ -54,26 +54,43 @@ export function EventPanel({ data, onDone }: { data: GameData; onDone?: () => vo
 
   async function fire(kind: string, extra: Record<string, unknown> = {}) {
     setBusy(true);
-    const ok = await run("fire_event", { kind, ...extra });
+    const res = await run("fire_event", { kind, ...extra });
     setBusy(false);
-    if (ok) onDone?.();
-    return ok;
+    if (!res.ok) return false;
+    if (res.state?.skipped) toast.message(copy.mc.skippedToast);
+    else toast.success(copy.mc.firedToast(eventName(kind)));
+    onDone?.();
+    return true;
   }
 
   // Auto-fire: when the clock reaches a scheduled minute, fire it once from this browser.
   // The server refuses a second fire of the same schedule line, so two MC tabs are safe.
   const tried = useRef(new Set<number>());
+  const scheduleKey = schedule.map((s) => `${s.index}:${s.fired ? 1 : 0}`).join(",");
   useEffect(() => {
     if (!autoFire || !playing) return;
     for (const s of schedule) {
       if (!s.fired && minuteNow >= s.minute && !tried.current.has(s.index)) {
         tried.current.add(s.index);
         void sendAction("fire_event", { kind: s.kind, schedule_index: s.index }).then((res) => {
-          if (res.error_code === "NETWORK") tried.current.delete(s.index);
+          if (res.error_code === "NETWORK") {
+            tried.current.delete(s.index);
+            return;
+          }
+          if (!res.ok) {
+            if (res.error_code !== "ALREADY_FIRED") {
+              toast.error(errorMessage(res.error_code, res.args));
+            }
+            return;
+          }
+          if (res.state?.skipped) toast.message(copy.mc.skippedToast);
+          onDone?.();
         });
       }
     }
-  });
+    // scheduleKey captures fired flags; schedule list is rebuilt each render from cfg + events.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: avoid firing on every events object identity
+  }, [autoFire, playing, minuteNow, scheduleKey]);
 
   const lastCallTime = game.status === "running" && minuteNow >= cfg.clock.last_call_minute;
 
@@ -117,8 +134,8 @@ export function EventPanel({ data, onDone }: { data: GameData; onDone?: () => vo
               checked={autoFire}
               onCheckedChange={(on) => {
                 setAutoFire(on);
-                void run("set_option", { name: "auto_fire", on }).then((ok) => {
-                  if (!ok) setAutoFire(!on);
+                void run("set_option", { name: "auto_fire", on }).then((res) => {
+                  if (!res.ok) setAutoFire(!on);
                   else onDone?.();
                 });
               }}

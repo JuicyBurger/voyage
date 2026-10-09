@@ -61,6 +61,10 @@ export const copy = {
     resetNumbers: "Kembalikan ke bawaan",
     resetNumbersDone: "Angka dikembalikan ke bawaan. Ketuk Simpan untuk menyimpan.",
     backPanel: "Kembali ke panel MC",
+    sells: (items: string) => `Menjual: ${items || "—"}`,
+    sellsItems: (items: string) => `Barang: ${items}`,
+    noSellerWarn: (items: string) =>
+      `Bagian tanpa penjual: ${items}. Nyalakan posnya atau ubah pengaturan.`,
   },
 
   lobby: {
@@ -76,6 +80,7 @@ export const copy = {
     connected: "Terhubung",
     connectedCount: (n: number, total: number) => `${n} dari ${total} terhubung`,
     startWarn: "Beberapa HP masih menunggu. Mulai permainan sekarang?",
+    autoFireOffWarn: "Otomatis picu acara MATI. Acara terjadwal tidak akan jalan. Mulai tetap?",
     showPins: "Tampilkan PIN",
     hidePins: "Sembunyikan PIN",
     showQr: "QR",
@@ -192,6 +197,7 @@ export const copy = {
     defWin: (team: string) => `${team} merampokmu, tapi kamu menang!`,
     defLoss: (team: string, amount: number) => `${team} merampokmu dan mengambil ${amount} emas!`,
     defBlocked: (team: string) => `${team} merampokmu. Perisaimu menahannya!`,
+    safeAfter: (mins: number) => `Aman ${mins} menit dari raid.`,
     raidedTitle: "RAID!",
     extras: (doubled: boolean, pirateHour: boolean, bounty: boolean) =>
       [doubled && "Untung Ganda!", pirateHour && "Jam Bajak Laut!", bounty && "Hadiah Buronan!"].filter(Boolean).join(" "),
@@ -233,8 +239,10 @@ export const copy = {
       const extra = [doubled && "Untung Ganda!", goldRush && "Gold Rush!"].filter(Boolean).join(" ");
       return `${team} +${amount} emas${extra ? ` (${extra})` : ""}`;
     },
-    toastBuy: (team: string, item: string, price: number) => `${team} membeli ${item} seharga ${price} emas`,
+    toastBuy: (team: string, item: string, price: number) => `Dijual: ${item} ke ${team} (−${price} emas)`,
     toastUndo: "Dibatalkan.",
+    toastDone: "Tim dilepas.",
+    waitBusy: "Tunggu aksi sebelumnya selesai.",
     reason: {
       owned: "Sudah punya",
       noStock: "Stok habis",
@@ -288,6 +296,8 @@ export const copy = {
     fired: "Sudah dipicu",
     schedule: "Jadwal",
     autoFire: "Otomatis picu acara terjadwal",
+    firedToast: (name: string) => `${name} dipicu.`,
+    skippedToast: "Obralan Pasar dilewati (tidak ada bagian untuk diobral).",
     events: "Acara",
     fire: "Picu",
     stop: "Stop",
@@ -305,8 +315,10 @@ export const copy = {
       parts: "Bagian",
       items: "Barang",
       raids: "Sisa raid",
-      wins: "Menang raid",
-      raided: "Dirampok",
+      wins: "Menang serang",
+      defended: "Menang bertahan",
+      raided: "Raid dicoba",
+      stolen: "Emas dicuri",
       safe: "Aman",
       boat: "Kapal",
     },
@@ -417,6 +429,10 @@ export const copy = {
     STORM: (a) => `Badai! Tunggu ${clockText(Number(a.seconds_left ?? 0))}.`,
     LAST_CALL: () => "Last Call. Tidak ada raid lagi.",
     BAD_STATE: () => "Kamu tidak bisa melakukan itu sekarang.",
+    POST_OFF: (a) => `Pos ${a.post ?? ""} tidak aktif.`,
+    TEAM_OFF: (a) => `Tim ${a.team ?? ""} tidak main.`,
+    TEAM_BUSY: (a) => `${a.team} sedang dilayani di ${a.post}.`,
+    NOT_SERVING: (a) => `Klaim ${a.team} dulu sebelum bekerja atau menjual.`,
     JOB_LIMIT: (a) => `${a.team} sudah melakukan ${a.limit} pekerjaan di sini.`,
     NO_STOCK: (a) =>
       a.supply_minute
@@ -524,6 +540,30 @@ export function journeyLine(a: Action): string {
       return "Kamu dilepas dari kunci raid.";
     case "lighthouse":
       return `Bantuan Mercusuar! +${a.amount} emas.`;
+    case "event": {
+      const ev = String(a.details.event ?? "");
+      switch (ev) {
+        case "supply_ship":
+          return "Kapal Pasokan: stok bagian diisi ulang.";
+        case "storm":
+          return "Badai! Semua aktivitas berhenti.";
+        case "gold_rush":
+          return "Gold Rush dimulai.";
+        case "market_sale":
+          if (a.details.skipped) return "Obralan Pasar dilewati (tidak ada bagian untuk diobral).";
+          return `Obralan Pasar: ${itemName(a.details.part)} −${a.details.discount} emas.`;
+        case "pirate_hour":
+          return "Jam Bajak Laut dimulai.";
+        case "bounty":
+          return "Hadiah Buronan dimulai.";
+        case "last_call":
+          return "Last Call dimulai.";
+        case "message":
+          return String(a.details.text ?? eventName(ev));
+        default:
+          return `${eventName(ev)} dimulai.`;
+      }
+    }
     case "adjust":
       return a.details.field === "gold"
         ? `MC mengubah emasmu: ${signed(a.amount)}. (${a.details.reason})`
@@ -556,6 +596,19 @@ export function feedLine(a: Action, team: string): string | null {
       return `${a.details.other ?? "?"} melepas ${a.details.team}.`;
     case "lighthouse":
       return `${team} mendapat Bantuan Mercusuar. +${a.amount} emas.`;
+    case "event": {
+      const ev = String(a.details.event ?? "");
+      if (ev === "market_sale" && a.details.skipped) {
+        return `${eventName(ev)} dilewati (tidak ada bagian untuk diobral).`;
+      }
+      if (ev === "supply_ship") {
+        return `${eventName(ev)}: +${a.details.add ?? "?"} tiap bagian.`;
+      }
+      if (ev === "message") {
+        return `${eventName(ev)}: ${a.details.text ?? ""}`;
+      }
+      return `${eventName(ev)} dipicu.`;
+    }
     case "adjust":
       return a.details.field === "gold"
         ? `MC: emas ${team} ${signed(a.amount)} (${a.details.reason})`
@@ -593,7 +646,12 @@ export function stripText(e: WorldEvent): string {
       return `Gold Rush: bonus +${p.bonus} emas untuk tiap pekerjaan lulus (Untung Ganda menggandakannya)`;
     case "storm":
       return "Badai: tidak ada yang boleh kerja, beli, atau raid";
+    case "supply_ship":
+      return p.capped_at != null
+        ? `Kapal Pasokan: +${p.add} tiap bagian (maks ${p.capped_at})`
+        : `Kapal Pasokan: +${p.add} tiap bagian`;
     case "market_sale":
+      if (p.skipped) return "Obralan Pasar dilewati (tidak ada bagian untuk diobral)";
       return `Obralan Pasar: ${itemName(p.part)} −${p.discount} emas`;
     case "pirate_hour":
       return `Jam Bajak Laut: raid menang mencuri ×${p.multiplier}`;
@@ -636,7 +694,14 @@ export function bannerFor(e: WorldEvent): Banner | null {
     case "storm":
       return { title: "BADAI!", body: "Cari perlindungan di pos. Tidak ada yang boleh kerja atau raid.", tone: "bad" };
     case "supply_ship":
-      return { title: "KAPAL PASOKAN!", body: `Kapal pasokan datang! +${p.add} setiap bagian.`, tone: "good" };
+      return {
+        title: "KAPAL PASOKAN!",
+        body:
+          p.capped_at != null
+            ? `Kapal pasokan datang! +${p.add} tiap bagian (maks ${p.capped_at ?? "stok awal"}).`
+            : `Kapal pasokan datang! +${p.add} setiap bagian.`,
+        tone: "good",
+      };
     case "lighthouse_aid": {
       const names = (p.teams as string[]) ?? [];
       return {
@@ -646,6 +711,13 @@ export function bannerFor(e: WorldEvent): Banner | null {
       };
     }
     case "market_sale":
+      if (p.skipped) {
+        return {
+          title: "OBRALAN PASAR",
+          body: "Dilewati — tidak ada bagian untuk diobral.",
+          tone: "info",
+        };
+      }
       return { title: "OBRALAN PASAR!", body: `${itemName(p.part)} lebih murah ${p.discount} emas.`, tone: "good" };
     case "pirate_hour":
       return { title: "JAM BAJAK LAUT!", body: `Raid menang mencuri ${p.multiplier}× lebih banyak emas.`, tone: "bad" };

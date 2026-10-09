@@ -12,9 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { sendAction } from "@/lib/api";
 import { TEAM_COLORS, teamColor } from "@/lib/colors";
-import { copy, errorMessage } from "@/lib/copy";
+import { copy, errorMessage, itemName } from "@/lib/copy";
 import { supabaseBrowser } from "@/lib/supabase-browser";
-import type { Game, GameConfig, Post, PostKind, Team } from "@/lib/types";
+import { PARTS, type Game, type GameConfig, type Post, type PostKind, type Team } from "@/lib/types";
 
 // Defaults for the number fields (matches default_config() in Postgres).
 const NUMBER_DEFAULTS: Record<string, number> = {
@@ -145,6 +145,16 @@ export function SetupForm({ gameId }: { gameId: string }) {
   }
 
   async function continueToPhones() {
+    if (!config) return;
+    const inactiveSellers = PARTS.filter((part) => {
+      const kind = config.parts[part].post;
+      const post = posts.find((x) => x.kind === kind);
+      return post?.active === false;
+    });
+    if (inactiveSellers.length) {
+      toast.error(copy.setup.noSellerWarn(inactiveSellers.map(itemName).join(", ")));
+      return;
+    }
     setSaving(true);
     const res = await sendAction("update_setup", {
       config: configEditable ? config : undefined,
@@ -261,7 +271,11 @@ export function SetupForm({ gameId }: { gameId: string }) {
           <p className="text-sm text-muted-foreground">
             Matikan pos yang tidak ada penjaganya agar tim tidak diarahkan ke sana.
           </p>
-          {posts.map((p, i) => (
+          {posts.map((p, i) => {
+            const sells = PARTS.filter((part) => config.parts[part].post === p.kind).map(itemName);
+            const goods =
+              p.kind === "blacksmith" ? (["flag", "sword", "shield"] as const).map(itemName) : [];
+            return (
             <div key={p.id} className={`flex flex-col gap-2 ${p.active === false ? "opacity-50" : ""}`}>
               <div className="flex flex-wrap items-center gap-2">
                 <Input
@@ -290,6 +304,10 @@ export function SetupForm({ gameId }: { gameId: string }) {
                   {p.active !== false ? copy.mc.inPlay : copy.mc.parked}
                 </label>
               </div>
+              <p className="text-sm text-muted-foreground">
+                {copy.setup.sells(sells.join(", "))}
+                {goods.length > 0 ? ` · ${copy.setup.sellsItems(goods.join(", "))}` : ""}
+              </p>
               <Input
                 placeholder="Aturan pekerjaan (tampil di HP pos)"
                 value={config.post_rules?.[p.kind] ?? ""}
@@ -298,7 +316,8 @@ export function SetupForm({ gameId }: { gameId: string }) {
                 className="h-11"
               />
             </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
 

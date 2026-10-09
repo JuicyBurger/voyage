@@ -39,7 +39,9 @@ export function TeamsTable({ data }: { data: GameData }) {
               <TableHead>{copy.mc.col.items}</TableHead>
               <TableHead className="text-right">{copy.mc.col.raids}</TableHead>
               <TableHead className="text-right">{copy.mc.col.wins}</TableHead>
+              <TableHead className="text-right">{copy.mc.col.defended}</TableHead>
               <TableHead className="text-right">{copy.mc.col.raided}</TableHead>
+              <TableHead className="text-right">{copy.mc.col.stolen}</TableHead>
               <TableHead>{copy.mc.col.safe}</TableHead>
               <TableHead>{copy.mc.col.boat}</TableHead>
               <TableHead className="text-right">{copy.scores.points}</TableHead>
@@ -50,6 +52,13 @@ export function TeamsTable({ data }: { data: GameData }) {
               const c = teamColor(t.color);
               const safeMs = t.immune_until ? Date.parse(t.immune_until) - now : 0;
               const score = data.scores?.find((s) => s.team_id === t.id);
+              const raids = data.raids ?? [];
+              const defenceWins = raids.filter(
+                (r) => r.defender_id === t.id && (r.result === "loss" || r.result === "blocked"),
+              ).length;
+              const goldStolen = raids
+                .filter((r) => r.attacker_id === t.id && r.result === "win")
+                .reduce((sum, r) => sum + (r.amount ?? 0), 0);
               return (
                 <TableRow key={t.id} className="cursor-pointer text-base" onClick={() => setEditing(t)}>
                   <TableCell>
@@ -66,6 +75,7 @@ export function TeamsTable({ data }: { data: GameData }) {
                           key={p}
                           className="rounded px-1.5 py-0.5 text-xs font-semibold"
                           style={hasPart(t, p) ? { background: c.bg, color: "#fff" } : { border: "1px dashed #94a3b8", color: "#94a3b8" }}
+                          title={hasPart(t, p) ? copy.post.reason.owned : "Belum"}
                         >
                           {itemName(p)}
                         </span>
@@ -81,7 +91,9 @@ export function TeamsTable({ data }: { data: GameData }) {
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{t.has_flag ? t.raids_left : "–"}</TableCell>
                   <TableCell className="text-right tabular-nums">{t.raid_wins}</TableCell>
+                  <TableCell className="text-right tabular-nums">{defenceWins}</TableCell>
                   <TableCell className="text-right tabular-nums">{t.times_raided}</TableCell>
+                  <TableCell className="text-right tabular-nums">{goldStolen || ""}</TableCell>
                   <TableCell className="font-mono tabular-nums">{safeMs > 0 ? formatClock(safeMs + 999) : ""}</TableCell>
                   <TableCell className="font-semibold">{t.boat_rank ? `#${t.boat_rank}` : ""}</TableCell>
                   <TableCell className="text-right">

@@ -47,7 +47,12 @@ export function TeamScreen({ identity }: { identity: Identity }) {
       <StormOverlay game={data.game} events={data.events} />
       <RaidLockOverlay game={data.game} me={team} teams={data.teams} />
       <RevealOverlay game={data.game} me={team.id} scores={data.scores} />
-      <IncomingRaid raids={data.raids} teams={data.teams} me={team} />
+      <IncomingRaid
+        raids={data.raids}
+        teams={data.teams}
+        me={team}
+        immuneMinutes={data.game.config.raid.immune_minutes}
+      />
 
       <main className="mx-auto flex w-full max-w-xl flex-col gap-4 p-3 pb-10">
         <section className="py-2 text-center">

@@ -70,5 +70,5 @@ export function forgetGame(token: string) {
 }
 
 export function continueLabel(g: MyGame) {
-  return `Continue as ${g.label} (${g.code})`;
+  return `Lanjut sebagai ${g.label} (${g.code})`;
 }

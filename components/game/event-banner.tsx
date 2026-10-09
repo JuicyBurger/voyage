@@ -63,7 +63,7 @@ export function EventBanner({ events }: { events: WorldEvent[] }) {
       {current && (
         <motion.div
           key={current.id}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 p-8 text-center text-white"
+          className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-4 p-8 text-center text-white"
           style={{ background: TONE_BG[current.banner.tone] }}
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
