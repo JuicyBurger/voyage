@@ -38,7 +38,12 @@ export function TeamScreen({ identity }: { identity: Identity }) {
   const safeMs = team.immune_until ? Date.parse(team.immune_until) - now : 0;
   const servingPost = data.posts.find((p) => p.serving_team_id === team.id);
   const challenge = servingPost ? data.game.config.post_rules?.[servingPost.kind] : null;
-  const hasPrisoners = data.teams.some((t) => t.raid_locked_by === team.id);
+  const hasPrisoners = data.teams.some(
+    (t) => t.raid_locked_by === team.id || t.raid_lock_pending_by === team.id,
+  );
+  const pendingAttacker = team.raid_lock_pending_by
+    ? data.teams.find((t) => t.id === team.raid_lock_pending_by)
+    : null;
 
   return (
     <div className="flex min-h-dvh flex-col" style={{ background: c.soft }}>
@@ -61,6 +66,13 @@ export function TeamScreen({ identity }: { identity: Identity }) {
           </div>
           <div className="text-lg font-semibold uppercase">{copy.team.gold}</div>
         </section>
+
+        {pendingAttacker && !team.raid_locked_by && (
+          <div className="rounded-xl border-2 border-red-600 bg-red-50 px-4 py-3 text-base font-semibold text-red-950">
+            <div className="text-lg font-black">{copy.raid.pendingLockTitle}</div>
+            <p className="mt-1 leading-snug">{copy.raid.pendingLockBody(pendingAttacker.name)}</p>
+          </div>
+        )}
 
         {safeMs > 0 && (
           <div className="flex items-center gap-2 rounded-xl bg-sky-100 px-4 py-3 text-base font-semibold text-sky-900">

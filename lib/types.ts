@@ -96,6 +96,8 @@ export type Team = {
   immune_until: string | null;
   raid_locked_by: string | null;
   raid_unlock_code: string | null;
+  raid_lock_pending_by: string | null;
+  raid_lock_pending_code: string | null;
   boat_done_at: string | null;
   boat_rank: number | null;
 };

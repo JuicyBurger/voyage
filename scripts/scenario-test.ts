@@ -281,8 +281,11 @@ async function rulesForRaids() {
     check("blocked even with the right code", blocked.error_code === "RAID_BLOCKED", blocked);
     check("wrong codes use no raid", (await team(BEARS)).raids_left === 3);
 
+    // Not at a post → lock applies immediately on a win.
+    await db.from("posts").update({ serving_team_id: null }).eq("serving_team_id", MACAQUES);
     const win = await act(magpies, "start_raid", { defender_id: MACAQUES, code: realCode });
     check("raid wins", win.ok && win.state?.result === "win" && win.state?.amount === 15, win);
+    check("raid win locks immediately when not at a post", win.state?.lock_deferred === false, win);
     let mq = await team(MACAQUES);
     mg = await team(MAGPIES);
     check("Macaques 40 -> 25", mq.gold === 25, mq.gold);
@@ -329,7 +332,11 @@ async function rulesForRaids() {
     const ph = await team(PHEASANTS);
     check("Shield blocks the raid", shielded.state?.result === "blocked", shielded);
     check("Shield is gone, gold unchanged", ph.shield_count === 0 && ph.gold === 15, ph);
-    check("blocked raid does not lock", ph.raid_locked_by === null, ph);
+    check(
+      "blocked raid does not lock",
+      ph.raid_locked_by === null && ph.raid_lock_pending_by == null,
+      ph,
+    );
     check("blocked raid uses a raid", (await team(MAGPIES)).raids_left === 1);
     check("Pheasants are safe after the block", Date.parse(ph.immune_until) > Date.now() + 170000);
 
@@ -343,8 +350,38 @@ async function rulesForRaids() {
     const none = await act(magpies, "start_raid", { defender_id: BEARS, code: await codeOf(1) });
     check("no raids left is rejected", none.error_code === "NO_RAIDS", none);
 
+    console.log("Raid lock deferred while at a post");
+    await act(mc, "mc_adjust", { team_id: MAGPIES, field: "raids_left", value: 1, reason: "deferred lock test" });
+    await act(postToken("inn"), "set_serving", { team_id: BEARS });
+    await db.from("teams").update({ immune_until: null }).eq("id", BEARS);
+    const bearsCode = await codeOf(1);
+    const deferredRaid = await act(magpies, "start_raid", { defender_id: BEARS, code: bearsCode });
+    let br = await team(BEARS);
+    check(
+      "win while serving defers lock",
+      deferredRaid.ok && deferredRaid.state?.result === "win" && deferredRaid.state?.lock_deferred === true,
+      deferredRaid,
+    );
+    check(
+      "Bears pending lock, not active yet",
+      br.raid_lock_pending_by === MAGPIES && br.raid_locked_by === null,
+      br,
+    );
+    const stillJob = await act(postToken("inn"), "record_job", { team_id: BEARS, passed: true });
+    check("pending team can still finish the post job", stillJob.ok, stillJob);
+    const doneServe = await act(postToken("inn"), "set_serving", { team_id: null });
+    check("Selesai ok after deferred raid", doneServe.ok, doneServe);
+    br = await team(BEARS);
+    check(
+      "Selesai promotes pending lock",
+      br.raid_locked_by === MAGPIES && /^\d{4}$/.test(String(br.raid_unlock_code ?? "")),
+      br,
+    );
+    const unlockBears = await act(magpies, "unlock_raid_victim", { code: br.raid_unlock_code });
+    check("attacker unlocks deferred prisoner", unlockBears.ok, unlockBears);
+
     const { data: feed } = await db.from("raids").select("*").eq("game_id", gameId);
-    check("3 raids recorded", (feed ?? []).length === 3);
+    check("4 raids recorded", (feed ?? []).length === 4);
     await checkGoldMatchesLog(gameId);
   }
 

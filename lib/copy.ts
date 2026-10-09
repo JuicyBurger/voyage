@@ -210,6 +210,11 @@ export const copy = {
     unlockGo: "Lepaskan",
     unlockOk: (team: string) => `${team} sudah dilepas.`,
     unlockAfterWin: "Mereka terkunci. Minta kode OTP mereka lalu lepaskan di sini.",
+    unlockAfterWinDeferred:
+      "Mereka masih di pos. Setelah pos menekan Selesai, mereka terkunci — minta kode OTP lalu lepaskan.",
+    pendingLockTitle: "Raid menunggu",
+    pendingLockBody: (team: string) =>
+      `${team} merampokmu saat kamu di pos. Selesaikan di sini; setelah Selesai kamu terkunci dan harus beri mereka kode OTP.`,
   },
 
   post: {

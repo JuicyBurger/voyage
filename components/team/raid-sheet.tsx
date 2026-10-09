@@ -24,6 +24,7 @@ type RaidState = {
   pirate_hour: boolean;
   bounty: boolean;
   unlock_code?: string | null;
+  lock_deferred?: boolean;
 };
 
 export function RaidSheet({
@@ -111,7 +112,9 @@ export function RaidSheet({
                 </p>
               )}
               {raid.result === "win" && (
-                <p className="mt-3 text-base font-semibold text-slate-700">{copy.raid.unlockAfterWin}</p>
+                <p className="mt-3 text-base font-semibold text-slate-700">
+                  {raid.lock_deferred ? copy.raid.unlockAfterWinDeferred : copy.raid.unlockAfterWin}
+                </p>
               )}
               {raid.result === "win" && onUnlock ? (
                 <Button

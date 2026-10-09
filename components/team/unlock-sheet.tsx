@@ -30,7 +30,9 @@ export function UnlockSheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const prisoners = data.teams.filter((t) => t.raid_locked_by === team.id);
+  const prisoners = data.teams.filter(
+    (t) => t.raid_locked_by === team.id || t.raid_lock_pending_by === team.id,
+  );
 
   useEffect(() => {
     if (!open) return;

@@ -5,7 +5,7 @@ import { RehearsalMark } from "@/components/game/game-bar";
 import { copy } from "@/lib/copy";
 import type { Game, Team } from "@/lib/types";
 
-// Full-screen lock while this team is held after a successful raid.
+// Full-screen lock after a successful raid seize (immediate, or after post Selesai).
 // Cleared when the attacking team enters the OTP on their phone.
 export function RaidLockOverlay({ game, me, teams }: { game: Game; me: Team; teams: Team[] }) {
   if (!me.raid_locked_by || !me.raid_unlock_code) return null;
