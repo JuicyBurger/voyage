@@ -86,7 +86,7 @@ export function TeamScreen({ identity }: { identity: Identity }) {
         )}
 
         <BoatCard data={data} team={team} accent={c.bg} />
-        <ItemsCard team={team} accent={c.bg} onChange={refresh} />
+        <ItemsCard data={data} team={team} accent={c.bg} onChange={refresh} />
 
         {team.has_flag && team.raids_left > 0 && (
           <button
@@ -148,7 +148,8 @@ function BoatCard({ data, team, accent }: { data: GameData; team: Team; accent: 
                 <div className="text-sm opacity-90">{copy.team.owned}</div>
               ) : (
                 <div className="text-sm text-muted-foreground">
-                  {data.prices?.[p] ?? cfg.parts[p].price} gold · {post?.name}
+                  {copy.team.partWhere(data.prices?.[p] ?? cfg.parts[p].price, post?.name ?? "?")}
+                  {post && post.active === false && <span className="text-red-700"> ({copy.team.postOff})</span>}
                 </div>
               )}
             </div>
@@ -159,7 +160,19 @@ function BoatCard({ data, team, accent }: { data: GameData; team: Team; accent: 
   );
 }
 
-function ItemsCard({ team, accent, onChange }: { team: Team; accent: string; onChange: () => void }) {
+function ItemsCard({
+  data,
+  team,
+  accent,
+  onChange,
+}: {
+  data: GameData;
+  team: Team;
+  accent: string;
+  onChange: () => void;
+}) {
+  const cfg = data.game.config;
+  const smith = data.posts.find((p) => p.kind === "blacksmith");
   const [busy, setBusy] = useState(false);
 
   async function toggleDouble() {
@@ -171,10 +184,19 @@ function ItemsCard({ team, accent, onChange }: { team: Team; accent: string; onC
     onChange();
   }
 
-  const row = (on: boolean, icon: React.ReactNode, text: string) => (
-    <div className={`flex items-center gap-3 text-base ${on ? "font-semibold" : "text-muted-foreground"}`}>
-      {icon}
-      {text}
+  // Owned: what it does now. Not owned: what it does, price and where to buy it.
+  const row = (on: boolean, icon: React.ReactNode, text: string, item: "flag" | "sword" | "shield", help: string) => (
+    <div className={`flex items-start gap-3 text-base ${on ? "font-semibold" : "text-muted-foreground"}`}>
+      <span className="mt-0.5 shrink-0">{icon}</span>
+      <div className="min-w-0">
+        <div>{text}</div>
+        {!on && (
+          <div className="text-sm font-normal">
+            {help} {copy.team.itemWhere(data.prices?.[item] ?? cfg.items[item].price, smith?.name ?? "?")}
+            {smith && smith.active === false && <span className="text-red-700"> ({copy.team.postOff})</span>}
+          </div>
+        )}
+      </div>
     </div>
   );
 
@@ -184,9 +206,27 @@ function ItemsCard({ team, accent, onChange }: { team: Team; accent: string; onC
         <CardTitle className="text-lg">{copy.team.items}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
-        {row(team.has_flag, <Flag className="size-5" />, team.has_flag ? copy.team.flag(team.raids_left) : copy.team.noFlag)}
-        {row(team.has_sword, <Sword className="size-5" />, team.has_sword ? copy.team.sword : copy.team.noSword)}
-        {row(team.shield_count > 0, <Shield className="size-5" />, team.shield_count > 0 ? copy.team.shield : copy.team.noShield)}
+        {row(
+          team.has_flag,
+          <Flag className="size-5" />,
+          team.has_flag ? copy.team.flag(team.raids_left) : copy.team.noFlag,
+          "flag",
+          copy.team.itemHelp.flag(cfg.items.flag.raids),
+        )}
+        {row(
+          team.has_sword,
+          <Sword className="size-5" />,
+          team.has_sword ? copy.team.sword(cfg.items.sword.bonus) : copy.team.noSword,
+          "sword",
+          copy.team.itemHelp.sword(cfg.items.sword.bonus),
+        )}
+        {row(
+          team.shield_count > 0,
+          <Shield className="size-5" />,
+          team.shield_count > 0 ? copy.team.shield : copy.team.noShield,
+          "shield",
+          copy.team.itemHelp.shield,
+        )}
 
         <button
           onClick={toggleDouble}

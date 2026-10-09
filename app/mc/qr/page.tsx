@@ -29,8 +29,8 @@ type TokenRow = {
 };
 type TokensState = {
   tokens: TokenRow[];
-  teams: { id: string; slot: number; name: string; color: string }[];
-  posts: { id: string; kind: PostKind; name: string; staff_name: string | null }[];
+  teams: { id: string; slot: number; name: string; color: string; active?: boolean }[];
+  posts: { id: string; kind: PostKind; name: string; staff_name: string | null; active?: boolean }[];
   code: string;
   name?: string;
 };
@@ -64,7 +64,13 @@ export default function QrPage() {
   if (error) return <main className="p-6 text-lg">{error}</main>;
   if (!data) return <main className="p-6">{copy.common.loading}</main>;
 
-  const cards: CardInfo[] = data.tokens.map((t) => {
+  // Teams and posts switched off in setup ("Tidak main") get no card.
+  const inPlay = data.tokens.filter((t) => {
+    if (t.role === "team") return data.teams.find((x) => x.id === t.team_id)?.active !== false;
+    if (t.role === "post") return data.posts.find((x) => x.id === t.post_id)?.active !== false;
+    return true;
+  });
+  const cards: CardInfo[] = inPlay.map((t) => {
     if (t.role === "team") {
       const team = data.teams.find((x) => x.id === t.team_id)!;
       return {

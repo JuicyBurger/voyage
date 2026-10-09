@@ -37,8 +37,8 @@ type TokenRow = {
 
 type LobbyState = {
   tokens: TokenRow[];
-  teams: { id: string; slot: number; name: string; color: string }[];
-  posts: { id: string; kind: PostKind; name: string }[];
+  teams: { id: string; slot: number; name: string; color: string; active?: boolean }[];
+  posts: { id: string; kind: PostKind; name: string; active?: boolean }[];
   code: string;
   name: string;
   status: Game["status"];
@@ -142,6 +142,8 @@ export default function LobbyPage() {
         });
       } else if (t.role === "team") {
         const team = data.teams.find((x) => x.id === t.team_id);
+        // Teams and posts switched off in setup ("Tidak main") have no phone in this game.
+        if (team?.active === false) continue;
         list.push({
           id: t.id,
           token: t.token,
@@ -153,6 +155,7 @@ export default function LobbyPage() {
         });
       } else {
         const post = data.posts.find((x) => x.id === t.post_id);
+        if (post?.active === false) continue;
         list.push({
           id: t.id,
           token: t.token,
@@ -167,7 +170,7 @@ export default function LobbyPage() {
   }, [data]);
 
   const phones = rows.filter((r) => r.order !== 0);
-  const connectedCount = phones.filter((r) => r.connected).length;
+  const connectedCount = rows.filter((r) => r.connected).length;
 
   async function startGame() {
     if (!data) return;
@@ -241,7 +244,7 @@ export default function LobbyPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <CardTitle className="text-lg">
-            {copy.lobby.connectedCount(connectedCount, phones.length)}
+            {copy.lobby.connectedCount(connectedCount, rows.length)}
           </CardTitle>
           <Button variant="outline" size="sm" onClick={() => setShowPins((s) => !s)}>
             {showPins ? copy.lobby.hidePins : copy.lobby.showPins}

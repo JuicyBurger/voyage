@@ -217,17 +217,11 @@ function SelectedTeam({
   const rush = activeEvent(data.events, "gold_rush", now) ? cfg.events.gold_rush_bonus : 0;
   const passAmount = (cfg.job_pay[postKind as keyof typeof cfg.job_pay] + rush) * (team.double_armed ? 2 : 1);
 
+  // Owned items stay listed (disabled, "Sudah punya") so the section never disappears.
   const forSale: Item[] = [
     ...PARTS.filter((p) => cfg.parts[p].post === postKind),
     ...(postKind === "blacksmith" ? (["flag", "sword", "shield"] as Item[]) : []),
-  ].filter((item) => {
-    // Hide already-owned items instead of listing them as disabled.
-    if (PARTS.includes(item as Part) && hasPart(team, item as Part)) return false;
-    if (item === "flag" && team.has_flag) return false;
-    if (item === "sword" && team.has_sword) return false;
-    if (item === "shield" && team.shield_count >= 1) return false;
-    return true;
-  });
+  ];
 
   function clearTimer() {
     endsAt.current = null;
@@ -288,16 +282,14 @@ function SelectedTeam({
   }, [open, locked, jobsFull]);
 
   function reasonFor(item: Item): string | null {
-    if (!open) return copy.post.reason.closed;
-    if (locked) return copy.post.reason.raidLocked;
-    const price = data.prices?.[item] ?? 0;
-    if (PARTS.includes(item as Part)) {
-      if (hasPart(team, item as Part)) return copy.post.reason.owned;
-      if ((data.stock[item as Part] ?? 0) <= 0) return copy.post.reason.noStock;
-    }
+    if (PARTS.includes(item as Part) && hasPart(team, item as Part)) return copy.post.reason.owned;
     if (item === "flag" && team.has_flag) return copy.post.reason.owned;
     if (item === "sword" && team.has_sword) return copy.post.reason.owned;
     if (item === "shield" && team.shield_count >= 1) return copy.post.reason.shield;
+    if (!open) return copy.post.reason.closed;
+    if (locked) return copy.post.reason.raidLocked;
+    const price = data.prices?.[item] ?? 0;
+    if (PARTS.includes(item as Part) && (data.stock[item as Part] ?? 0) <= 0) return copy.post.reason.noStock;
     if (team.gold < price) return copy.post.reason.gold(price - team.gold);
     return null;
   }
@@ -337,9 +329,9 @@ function SelectedTeam({
               {itemName(p)}
             </Badge>
           ))}
-          {team.has_flag && <Badge variant="secondary">Flag ×{team.raids_left}</Badge>}
-          {team.has_sword && <Badge variant="secondary">Sword</Badge>}
-          {team.shield_count > 0 && <Badge variant="secondary">Shield</Badge>}
+          {team.has_flag && <Badge variant="secondary">{copy.post.tagFlag(team.raids_left)}</Badge>}
+          {team.has_sword && <Badge variant="secondary">{copy.post.tagSword}</Badge>}
+          {team.shield_count > 0 && <Badge variant="secondary">{copy.post.tagShield}</Badge>}
         </div>
 
         {team.double_armed && (
@@ -348,39 +340,48 @@ function SelectedTeam({
           </div>
         )}
 
-        <div className="flex flex-col gap-2">
-          {timing ? (
-            <div className="rounded-xl bg-slate-900 py-3 text-center text-5xl font-black tabular-nums text-white">
-              {left}
-            </div>
-          ) : null}
-          <Button
-            variant="outline"
-            disabled={baseDisabled}
-            onClick={startTimer}
-            className="h-14 text-lg font-bold"
-          >
-            <Timer className="size-5" />
-            {timing ? copy.post.restartTimer(timerSecs) : copy.post.startTimer(timerSecs)}
-          </Button>
-        </div>
+        {jobsFull ? (
+          <div className="rounded-xl bg-slate-200 px-4 py-3 text-center">
+            <div className="text-xl font-black">{copy.post.jobsUsed}</div>
+            <div className="text-sm text-muted-foreground">{copy.post.jobsUsedHint(cfg.jobs_per_post)}</div>
+          </div>
+        ) : (
+          <>
+          <div className="flex flex-col gap-2">
+            {timing ? (
+              <div className="rounded-xl bg-slate-900 py-3 text-center text-5xl font-black tabular-nums text-white">
+                {left}
+              </div>
+            ) : null}
+            <Button
+              variant="outline"
+              disabled={baseDisabled}
+              onClick={startTimer}
+              className="h-14 text-lg font-bold"
+            >
+              <Timer className="size-5" />
+              {timing ? copy.post.restartTimer(timerSecs) : copy.post.startTimer(timerSecs)}
+            </Button>
+          </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            disabled={jobDisabled}
-            onClick={() => job(true)}
-            className="h-20 bg-green-600 text-2xl font-black text-white hover:bg-green-700"
-          >
-            {jobDisabled && !timing ? copy.post.passReady : copy.post.pass(passAmount)}
-          </Button>
-          <Button
-            disabled={jobDisabled}
-            onClick={() => job(false)}
-            className="h-20 bg-red-600 text-2xl font-black text-white hover:bg-red-700"
-          >
-            {jobDisabled && !timing ? copy.post.failReady : copy.post.fail(cfg.fail_pay)}
-          </Button>
-        </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              disabled={jobDisabled}
+              onClick={() => job(true)}
+              className="h-20 bg-green-600 text-2xl font-black text-white hover:bg-green-700"
+            >
+              {jobDisabled && !timing ? copy.post.passReady : copy.post.pass(passAmount)}
+            </Button>
+            <Button
+              disabled={jobDisabled}
+              onClick={() => job(false)}
+              className="h-20 bg-red-600 text-2xl font-black text-white hover:bg-red-700"
+            >
+              {jobDisabled && !timing ? copy.post.failReady : copy.post.fail(cfg.fail_pay)}
+            </Button>
+          </div>
+          </>
+        )}
 
         {forSale.length > 0 && (
           <div className="flex flex-col gap-2">

@@ -21,7 +21,9 @@ export function RehearsalSwitch({ game }: { game: Game }) {
         {copy.mc.rehearsal}
         <Switch checked={game.rehearsal} disabled={locked} onCheckedChange={(on) => void toggle(on)} />
       </label>
-      <p className="text-xs text-muted-foreground">{copy.mc.rehearsalHint}</p>
+      <p className="text-xs text-muted-foreground">
+        {!locked ? copy.mc.rehearsalHint : game.rehearsal ? copy.mc.rehearsalOnLocked : copy.mc.rehearsalOffLocked}
+      </p>
     </div>
   );
 }

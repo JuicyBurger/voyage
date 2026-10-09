@@ -109,6 +109,7 @@ export function RaidDice({
       ) : (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full text-center">
           {children}
+          {!blocked && <p className="mt-2 text-xs text-muted-foreground">{copy.raid.tieRule}</p>}
         </motion.div>
       )}
     </div>

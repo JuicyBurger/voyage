@@ -210,8 +210,8 @@ export const handlers: Record<string, Handler> = {
       const gameId = ctx.actor!.game_id;
       const [tokens, teams, posts, game] = await Promise.all([
         db.from("role_tokens").select("id, token, pin, role, team_id, post_id, last_seen_at").eq("game_id", gameId),
-        db.from("teams").select("id, slot, name, color").eq("game_id", gameId),
-        db.from("posts").select("id, kind, name, staff_name").eq("game_id", gameId),
+        db.from("teams").select("id, slot, name, color, active").eq("game_id", gameId),
+        db.from("posts").select("id, kind, name, staff_name, active").eq("game_id", gameId),
         db.from("games").select("code, name, expires_at, status, rehearsal").eq("id", gameId).single(),
       ]);
       const connectedMs = 90_000;

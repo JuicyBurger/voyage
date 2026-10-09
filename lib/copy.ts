@@ -50,12 +50,12 @@ export const copy = {
     copied: "Disalin",
     savedCheck: "Saya sudah menyimpan PIN MC",
     continue: "Lanjut ke pengaturan",
-    step: "Langkah 1 dari 4",
+    step: "Langkah 1 dari 3",
   },
 
   setup: {
     title: "Pengaturan MC",
-    step: "Langkah 2 dari 4",
+    step: "Langkah 2 dari 3",
     continue: "Lanjut ke HP",
     save: "Simpan",
     resetNumbers: "Kembalikan ke bawaan",
@@ -65,7 +65,7 @@ export const copy = {
 
   lobby: {
     title: "HP",
-    step: "Langkah 3 dari 4",
+    step: "Langkah 3 dari 3",
     body: "Cetak lembar QR atau bagikan kode permainan. Pantau siapa yang bergabung di bawah.",
     gameCode: "Kode permainan",
     openQr: "Buka lembar QR",
@@ -137,11 +137,19 @@ export const copy = {
     boat: "Kapalmu",
     buyAt: (post: string) => `Beli di ${post}`,
     owned: "Sudah",
+    partWhere: (price: number, post: string) => `${price} emas · ${post}`,
+    postOff: "pos tidak aktif",
     nextStep: "Langkah berikutnya",
     items: "Barang",
     flag: (left: number) => `Bendera Bajak Laut: sisa ${left} raid`,
     noFlag: "Belum punya Bendera Bajak Laut",
-    sword: "Pedang: +1 pada dadu",
+    itemWhere: (price: number, post: string) => `${price} emas · ${post}`,
+    itemHelp: {
+      flag: (raids: number) => `Bisa merampok ${raids} kali.`,
+      sword: (bonus: number) => `+${bonus} pada dadu di setiap raid. Permanen.`,
+      shield: "Menahan 1 raid berikutnya, lalu habis.",
+    },
+    sword: (bonus: number) => `Pedang: +${bonus} pada dadu di setiap raid (permanen)`,
     noSword: "Belum punya Pedang",
     shield: "Perisai: menahan 1 raid berikutnya",
     noShield: "Belum punya Perisai",
@@ -177,6 +185,7 @@ export const copy = {
     rolling: "Mengocok dadu…",
     you: "Kamu",
     sword: (bonus: number) => `+${bonus} Pedang`,
+    tieRule: "Seri = bertahan menang. Pedang juga menambah dadu tim yang bertahan.",
     win: (amount: number) => `Menang! Kamu mengambil ${amount} emas.`,
     loss: "Kamu kalah. Tidak dapat emas.",
     blocked: (team: string) => `${team} punya Perisai. Raid ditahan.`,
@@ -206,6 +215,11 @@ export const copy = {
     passReady: "Lulus",
     failReady: "Gagal",
     sell: "Jual",
+    jobsUsed: "Pekerjaan habis",
+    jobsUsedHint: (total: number) => `Tim ini sudah ${total}/${total} pekerjaan di pos ini.`,
+    tagFlag: (left: number) => `Bendera · sisa ${left} raid`,
+    tagSword: "Pedang",
+    tagShield: "Perisai",
     stock: (n: number) => `Sisa ${n}`,
     buy: (price: number) => `Harga ${price}`,
     serving: (team: string) => `Melayani: ${team}`,
@@ -314,11 +328,15 @@ export const copy = {
     paceSlow: "Lambat: pertimbangkan dial harga",
     paceFast: "Cepat: minta pos memakai timer penuh",
     paceWait: "Cek tempo mulai di menit 20.",
+    paceAllDone: "Semua kapal sudah selesai. Cek tempo berhenti.",
+    paceScaled: (teams: number) => `Disesuaikan untuk ${teams} tim aktif.`,
     feed: "Umpan aktivitas",
     noFeed: "Belum ada.",
     links: { setup: "Pengaturan", lobby: "HP", qr: "Kode QR", tv: "Layar TV" },
     rehearsal: "Latihan",
     rehearsalHint: "Hanya latihan. Jam berjalan 4× lebih cepat. Nyalakan sebelum Mulai.",
+    rehearsalOnLocked: "Latihan aktif: jam berjalan 4× lebih cepat. Tidak bisa diubah setelah Mulai.",
+    rehearsalOffLocked: "Permainan berjalan normal. Latihan hanya bisa diubah sebelum Mulai.",
     postGame: "Selanjutnya?",
     postGameHint: "Setelah pengumuman selesai, tutup sesi atau mulai ulang.",
     closeGame: "Tutup permainan",
@@ -483,7 +501,7 @@ export function journeyLine(a: Action): string {
     case "buy":
       return `Membeli ${itemName(a.item)} di ${post}. −${Math.abs(a.amount)} emas.`;
     case "boat_done":
-      return `Kapalmu selesai! Peringkat ${a.details.rank}.`;
+      return `Kapalmu selesai! Peringkat ${a.details.rank}.${Number(a.details.bonus) > 0 ? ` Bonus finis +${a.details.bonus} poin.` : ""}`;
     case "undo":
       return `${post} membatalkan aksi terakhir. ${signed(a.amount)} emas.`;
     case "double_on":
@@ -572,7 +590,7 @@ export function stripText(e: WorldEvent): string {
   const p = e.payload;
   switch (e.kind) {
     case "gold_rush":
-      return `Gold Rush: +${p.bonus} emas per pekerjaan lulus (Untung Ganda menggandakannya)`;
+      return `Gold Rush: bonus +${p.bonus} emas untuk tiap pekerjaan lulus (Untung Ganda menggandakannya)`;
     case "storm":
       return "Badai: tidak ada yang boleh kerja, beli, atau raid";
     case "market_sale":
@@ -598,7 +616,7 @@ export function bannerFor(e: WorldEvent): Banner | null {
     case "boat_finished": {
       const rank = Number(p.rank);
       const place = rank === 1 ? "Pertama sampai pulau!" : `Peringkat ${rank}.`;
-      const bonus = Number(p.bonus) > 0 ? ` +${p.bonus} poin.` : "";
+      const bonus = Number(p.bonus) > 0 ? ` Bonus finis +${p.bonus} poin (bukan emas).` : "";
       return { title: "KAPAL SELESAI!", body: `${p.team} sudah membangun kapal! ${place}${bonus}`, tone: "good", big: true };
     }
     case "last_call":
@@ -612,7 +630,7 @@ export function bannerFor(e: WorldEvent): Banner | null {
     case "gold_rush":
       return {
         title: "GOLD RUSH!",
-        body: `Pekerjaan lulus mendapat +${p.bonus} emas. Untung Ganda menggandakan bonus itu. Buruan!`,
+        body: `Setiap pekerjaan lulus mendapat bonus +${p.bonus} emas di atas bayaran biasa. Untung Ganda menggandakan bonus itu. Buruan!`,
         tone: "good",
       };
     case "storm":
@@ -621,7 +639,11 @@ export function bannerFor(e: WorldEvent): Banner | null {
       return { title: "KAPAL PASOKAN!", body: `Kapal pasokan datang! +${p.add} setiap bagian.`, tone: "good" };
     case "lighthouse_aid": {
       const names = (p.teams as string[]) ?? [];
-      return { title: "BANTUAN MERCUSUAR", body: `${joinNames(names)} mendapat ${p.amount} emas.`, tone: "good" };
+      return {
+        title: "BANTUAN MERCUSUAR",
+        body: `${joinNames(names)} mendapat ${p.amount} emas (bantuan untuk tim dengan emas paling sedikit).`,
+        tone: "good",
+      };
     }
     case "market_sale":
       return { title: "OBRALAN PASAR!", body: `${itemName(p.part)} lebih murah ${p.discount} emas.`, tone: "good" };
