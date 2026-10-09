@@ -28,7 +28,7 @@ export function StockPosts({ data }: { data: GameData }) {
                 <div className={`text-2xl font-bold tabular-nums ${data.stock[p] === 0 ? "text-red-600" : ""}`}>
                   {data.stock[p]}
                 </div>
-                <div className="text-xs text-muted-foreground">{data.prices?.[p]} gold</div>
+                <div className="text-xs text-muted-foreground">{data.prices?.[p]} emas</div>
               </div>
             ))}
           </div>
